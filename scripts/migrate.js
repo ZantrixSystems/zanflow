@@ -1,5 +1,4 @@
 import { neon } from '@neondatabase/serverless';
-import { execSync } from 'child_process';
 import { readFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -7,23 +6,32 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const migrationsDir = join(__dirname, '../migrations');
 
-const PROJECT_ID = 'odd-silence-61915674';
-const ORG_ID = 'org-restless-morning-32034443';
-
-function getConnectionString() {
+// Load .dev.vars manually — never commit this file
+function loadDevVars() {
+  const devVarsPath = join(__dirname, '../.dev.vars');
   try {
-    return execSync(
-      `neon connection-string --project-id ${PROJECT_ID} --org-id ${ORG_ID}`,
-      { encoding: 'utf8' }
-    ).trim();
-  } catch (err) {
-    console.error('Failed to get connection string from Neon CLI.');
-    console.error('Run: neon auth');
+    const contents = readFileSync(devVarsPath, 'utf8');
+    for (const line of contents.split('\n')) {
+      const [key, ...rest] = line.split('=');
+      if (key && rest.length) {
+        process.env[key.trim()] = rest.join('=').trim();
+      }
+    }
+  } catch {
+    console.error('ERROR: .dev.vars file not found.');
+    console.error('Create .dev.vars in the project root and add NEON_DATABASE_URL=your-connection-string');
     process.exit(1);
   }
 }
 
-const connectionString = getConnectionString();
+loadDevVars();
+
+const connectionString = process.env.NEON_DATABASE_URL;
+if (!connectionString || connectionString === 'PASTE_YOUR_NEON_CONNECTION_STRING_HERE') {
+  console.error('ERROR: NEON_DATABASE_URL is not set in .dev.vars');
+  process.exit(1);
+}
+
 const sql = neon(connectionString);
 
 async function run() {
