@@ -107,6 +107,11 @@ export default function DashboardPage() {
                       <div className="application-row-meta">
                         Started {formatDate(app.created_at)}
                         {app.submitted_at && ` · Submitted ${formatDate(app.submitted_at)}`}
+                        {app.status === 'draft' && app.expires_at && (
+                          <span className="draft-expiry-warning">
+                            {' '}· Will be deleted on {formatDate(app.expires_at)}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <span className={`status-tag status-${app.status}`}>

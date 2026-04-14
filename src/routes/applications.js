@@ -98,7 +98,8 @@ async function createApplication(request, env) {
       contact_name,
       contact_email,
       contact_phone,
-      status
+      status,
+      expires_at
     ) VALUES (
       ${session.tenant_id},
       ${session.applicant_account_id},
@@ -113,7 +114,8 @@ async function createApplication(request, env) {
       ${null},
       ${null},
       ${null},
-      'draft'
+      'draft',
+      NOW() + INTERVAL '30 days'
     )
     RETURNING *
   `;
@@ -152,12 +154,14 @@ async function listApplications(request, env) {
       a.created_at,
       a.updated_at,
       a.submitted_at,
+      a.expires_at,
       at.name  AS application_type_name,
       at.slug  AS application_type_slug
     FROM applications a
     LEFT JOIN application_types at ON at.id = a.application_type_id
     WHERE a.tenant_id            = ${session.tenant_id}
       AND a.applicant_account_id = ${session.applicant_account_id}
+      AND (a.expires_at IS NULL OR a.expires_at > NOW())
     ORDER BY a.updated_at DESC
   `;
 
@@ -184,6 +188,7 @@ async function getApplication(request, env, id) {
     WHERE a.id                   = ${id}
       AND a.tenant_id            = ${session.tenant_id}
       AND a.applicant_account_id = ${session.applicant_account_id}
+      AND (a.expires_at IS NULL OR a.expires_at > NOW())
   `;
 
   if (rows.length === 0) return error('Not found', 404);
@@ -302,7 +307,8 @@ async function submitApplication(request, env, id) {
     SET
       status       = 'submitted',
       submitted_at = NOW(),
-      updated_at   = NOW()
+      updated_at   = NOW(),
+      expires_at   = NULL
     WHERE id                   = ${id}
       AND tenant_id            = ${session.tenant_id}
       AND applicant_account_id = ${session.applicant_account_id}

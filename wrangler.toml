@@ -10,6 +10,11 @@ directory = "./frontend/dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 
+# Nightly cron: hard-delete draft applications that have passed their expiry date.
+# Runs at 02:00 UTC every day.
+[triggers]
+crons = ["0 2 * * *"]
+
 # Secrets — set via CLI, never commit real values:
 #   npx wrangler secret put DATABASE_URL
 #   npx wrangler secret put JWT_SECRET

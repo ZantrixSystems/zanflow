@@ -21,6 +21,7 @@ import { handleAuthRoutes }            from './routes/auth.js';
 import { handleApplicantAuthRoutes }   from './routes/applicant-auth.js';
 import { handleApplicationTypeRoutes } from './routes/application-types.js';
 import { handleApplicationRoutes }     from './routes/applications.js';
+import { getDb }                       from './db/client.js';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -30,6 +31,26 @@ function json(data, status = 200) {
 }
 
 export default {
+  // ---------------------------------------------------------------------------
+  // Scheduled handler — nightly draft expiry cleanup
+  // Cron: "0 2 * * *" (02:00 UTC daily)
+  // ---------------------------------------------------------------------------
+  async scheduled(_event, env, ctx) {
+    const sql = getDb(env);
+    ctx.waitUntil(
+      sql`
+        DELETE FROM applications
+        WHERE status = 'draft'
+          AND expires_at IS NOT NULL
+          AND expires_at < NOW()
+      `.then((result) => {
+        console.log(`[cron] Deleted ${result.count ?? result.length ?? '?'} expired draft applications`);
+      }).catch((err) => {
+        console.error('[cron] Failed to delete expired drafts:', err);
+      })
+    );
+  },
+
   async fetch(request, env) {
     const url = new URL(request.url);
 

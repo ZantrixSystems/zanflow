@@ -159,6 +159,12 @@ export default function ApplicationPage() {
 
       {error && <div className="alert alert-error">{error}</div>}
 
+      {!isReadOnly && application.expires_at && (
+        <div className="alert alert-warning" style={{ marginBottom: 24 }}>
+          This draft will be automatically deleted on {formatDate(application.expires_at)} if not submitted.
+        </div>
+      )}
+
       {isReadOnly && (
         <div className="alert alert-success" style={{ marginBottom: 24 }}>
           This application has been submitted and cannot be edited.
