@@ -222,6 +222,10 @@ When designing UI:
 - keep public applicant flows simple and clear
 - verify component imports before adding JSX — missing imports cause silent crashes in production
 - do not introduce new CSS classes without confirming they exist in the stylesheet
+- always follow the house design system — see `Knowledge Base/Doctrines/DESIGN_SYSTEM.md`
+- the theme is "Alabaster Terminal": warm cream (`#FBF9F4`), gold CTAs (`#D4AF37`), Manrope font
+- never use generic blue (`#1d4ed8`) or pure black — use the CSS tokens in `index.css`
+- do not hardcode colours — always use `var(--color-*)` tokens
 
 ---
 
