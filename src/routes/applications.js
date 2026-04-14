@@ -71,6 +71,20 @@ async function createApplication(request, env) {
 
   const sql = getDb(env);
 
+  // Enforce tenant application limit
+  const limitCheck = await sql`
+    SELECT tl.max_applications,
+           COUNT(a.id)::int AS current_count
+    FROM tenant_limits tl
+    LEFT JOIN applications a
+      ON a.tenant_id = ${session.tenant_id}
+    WHERE tl.tenant_id = ${session.tenant_id}
+    GROUP BY tl.max_applications
+  `;
+  if (limitCheck.length > 0 && limitCheck[0].current_count >= limitCheck[0].max_applications) {
+    return error('Application limit reached for this tenant', 403);
+  }
+
   // Verify the application type is enabled for this tenant
   const typeCheck = await sql`
     SELECT at.id

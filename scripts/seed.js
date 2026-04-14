@@ -83,10 +83,20 @@ const OFFICER_PASSWORD = 'ChangeMe123!';
 // ---------------------------------------------------------------------------
 async function upsertTenant(sql, name, slug) {
   const rows = await sql`
-    INSERT INTO tenants (name, slug)
-    VALUES (${name}, ${slug})
-    ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name
-    RETURNING id, name, slug
+    INSERT INTO tenants (name, slug, subdomain, status, activated_at)
+    VALUES (${name}, ${slug}, ${slug}, 'active', NOW())
+    ON CONFLICT (slug) DO UPDATE
+      SET name         = EXCLUDED.name,
+          subdomain    = COALESCE(tenants.subdomain, EXCLUDED.subdomain),
+          status       = COALESCE(tenants.status, 'active'),
+          activated_at = COALESCE(tenants.activated_at, NOW())
+    RETURNING id, name, slug, subdomain, status
+  `;
+  // Upsert limits — no-op if already present
+  await sql`
+    INSERT INTO tenant_limits (tenant_id, max_staff_users, max_applications)
+    VALUES (${rows[0].id}, 100, 10000)
+    ON CONFLICT (tenant_id) DO NOTHING
   `;
   return rows[0];
 }

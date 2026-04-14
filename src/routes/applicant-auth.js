@@ -12,12 +12,10 @@
  *   GET  /applicant/me
  *
  * Tenant resolution:
- *   The tenant is resolved from the X-Tenant-Slug header on every request.
- *   In production, the frontend will send this based on which council's
- *   portal the applicant is using. The backend validates it against the DB.
- *
- *   This avoids encoding tenant in the URL (messy) or relying on subdomain
- *   parsing (not available in all deploy targets at MVP).
+ *   Delegated to src/lib/tenant-resolver.js — dual-mode.
+ *   Production: resolved from subdomain in Host header.
+ *   Dev/workers.dev fallback: resolved from X-Tenant-Slug header.
+ *   See tenant-resolver.js for removal instructions when on real domain.
  */
 
 import { getDb } from '../db/client.js';
@@ -29,6 +27,7 @@ import {
   getApplicantSession,
 } from '../lib/applicant-session.js';
 import { writeAuditLog } from '../lib/audit.js';
+import { resolveTenant } from '../lib/tenant-resolver.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -45,27 +44,13 @@ function error(message, status = 400) {
   return json({ error: message }, status);
 }
 
-/**
- * Resolve tenant from X-Tenant-Slug header.
- * Returns the tenant row or null.
- */
-async function resolveTenant(request, sql) {
-  const slug = request.headers.get('X-Tenant-Slug');
-  if (!slug) return null;
-
-  const rows = await sql`
-    SELECT id, name, slug FROM tenants WHERE slug = ${slug.toLowerCase().trim()}
-  `;
-  return rows[0] ?? null;
-}
-
 // ---------------------------------------------------------------------------
 // POST /applicant/register
 // ---------------------------------------------------------------------------
 async function register(request, env) {
   const sql = getDb(env);
   const tenant = await resolveTenant(request, sql);
-  if (!tenant) return error('Tenant not found. Ensure X-Tenant-Slug header is set.', 400);
+  if (!tenant) return error('Tenant not found or not available', 403);
 
   let body;
   try {
@@ -148,7 +133,7 @@ async function register(request, env) {
 async function login(request, env) {
   const sql = getDb(env);
   const tenant = await resolveTenant(request, sql);
-  if (!tenant) return error('Tenant not found. Ensure X-Tenant-Slug header is set.', 400);
+  if (!tenant) return error('Tenant not found or not available', 403);
 
   let body;
   try {

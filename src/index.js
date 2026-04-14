@@ -21,6 +21,7 @@ import { handleAuthRoutes }            from './routes/auth.js';
 import { handleApplicantAuthRoutes }   from './routes/applicant-auth.js';
 import { handleApplicationTypeRoutes } from './routes/application-types.js';
 import { handleApplicationRoutes }     from './routes/applications.js';
+import { handlePlatformAdminRoutes }   from './routes/platform-admin.js';
 import { getDb }                       from './db/client.js';
 
 function json(data, status = 200) {
@@ -67,6 +68,7 @@ export default {
         (await handleApplicantAuthRoutes(request, env))   ??
         (await handleApplicationTypeRoutes(request, env)) ??
         (await handleApplicationRoutes(request, env))     ??
+        (await handlePlatformAdminRoutes(request, env))   ??
         json({ error: 'Not found' }, 404);
 
       return response;
