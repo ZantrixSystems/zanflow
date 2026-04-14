@@ -328,6 +328,48 @@ async function submitApplication(request, env, id) {
 }
 
 // ---------------------------------------------------------------------------
+// DELETE /applications/:id
+// Hard-delete a draft. Only allowed while status = draft.
+// ---------------------------------------------------------------------------
+async function deleteApplication(request, env, id) {
+  const session = await getApplicantSession(request, env.JWT_SECRET);
+  if (!session) return error('Not authenticated', 401);
+
+  const sql = getDb(env);
+
+  const existing = await sql`
+    SELECT id, status
+    FROM applications
+    WHERE id                   = ${id}
+      AND tenant_id            = ${session.tenant_id}
+      AND applicant_account_id = ${session.applicant_account_id}
+  `;
+
+  if (existing.length === 0) return error('Not found', 404);
+  if (existing[0].status !== 'draft') {
+    return error('Only draft applications can be deleted', 409);
+  }
+
+  await sql`
+    DELETE FROM applications
+    WHERE id                   = ${id}
+      AND tenant_id            = ${session.tenant_id}
+      AND applicant_account_id = ${session.applicant_account_id}
+  `;
+
+  await writeAuditLog(sql, {
+    tenantId:   session.tenant_id,
+    actorType:  'applicant',
+    actorId:    session.applicant_account_id,
+    action:     'application.deleted',
+    recordType: 'application',
+    recordId:   id,
+  });
+
+  return json({ deleted: true });
+}
+
+// ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
 export async function handleApplicationRoutes(request, env) {
@@ -345,8 +387,9 @@ export async function handleApplicationRoutes(request, env) {
   const idMatch = url.pathname.match(/^\/api\/applications\/([^/]+)$/);
   if (idMatch) {
     const id = idMatch[1];
-    if (method === 'GET') return getApplication(request, env, id);
-    if (method === 'PUT') return updateApplication(request, env, id);
+    if (method === 'GET')    return getApplication(request, env, id);
+    if (method === 'PUT')    return updateApplication(request, env, id);
+    if (method === 'DELETE') return deleteApplication(request, env, id);
   }
 
   const submitMatch = url.pathname.match(/^\/api\/applications\/([^/]+)\/submit$/);

@@ -266,6 +266,17 @@ body { min-height: 100vh; }
   color: var(--color-primary);
 }
 
+.btn-danger {
+  background: var(--color-surface);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-danger);
+  color: #fff;
+}
+
 .btn-full { width: 100%; }
 
 .btn-sm {

@@ -44,6 +44,7 @@ export default function ApplicationPage() {
   const [loading,     setLoading]      = useState(true);
   const [saving,      setSaving]       = useState(false);
   const [submitting,  setSubmitting]   = useState(false);
+  const [deleting,    setDeleting]     = useState(false);
   const [saveStatus,  setSaveStatus]   = useState('');
   const [error,       setError]        = useState('');
 
@@ -98,6 +99,20 @@ export default function ApplicationPage() {
       setSaving(false);
     }
   }, [id, formData, isDraft]);
+
+  async function handleDelete() {
+    if (!isDraft) return;
+    if (!window.confirm('Delete this draft application? This cannot be undone.')) return;
+    setDeleting(true);
+    setError('');
+    try {
+      await api.deleteApplication(id);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Delete failed.');
+      setDeleting(false);
+    }
+  }
 
   async function handleSubmit() {
     if (!isDraft) return;
@@ -360,6 +375,16 @@ export default function ApplicationPage() {
             {saveStatus === 'saved' && (
               <span className="save-indicator saved">Saved</span>
             )}
+
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={handleDelete}
+              disabled={saving || submitting || deleting}
+              style={{ marginLeft: 'auto' }}
+            >
+              {deleting ? 'Deleting…' : 'Delete draft'}
+            </button>
           </div>
         )}
       </form>

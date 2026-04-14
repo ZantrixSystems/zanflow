@@ -59,5 +59,6 @@ export const api = {
   listApplications:  ()         => request('GET',  '/api/applications'),
   getApplication:    (id)       => request('GET',  `/api/applications/${id}`),
   updateApplication: (id, body) => request('PUT',  `/api/applications/${id}`, body),
-  submitApplication: (id)       => request('POST', `/api/applications/${id}/submit`),
+  submitApplication: (id)       => request('POST',   `/api/applications/${id}/submit`),
+  deleteApplication: (id)       => request('DELETE', `/api/applications/${id}`),
 };
