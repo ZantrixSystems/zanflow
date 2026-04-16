@@ -2,13 +2,15 @@
  * Platform public routes.
  *
  * These routes are for zanflo.com itself, not tenant portals.
- * They support controlled onboarding intake only. They do NOT
- * provision tenants, issue credentials, or configure DNS.
+ * They support self-serve creation of the initial tenant admin account.
  */
 
 import { getDb } from '../db/client.js';
 import { writeAuditLog } from '../lib/audit.js';
+import { hashPassword } from '../lib/passwords.js';
 import { validateSubdomain } from '../lib/subdomains.js';
+import { validateUsername } from '../lib/usernames.js';
+import { signSession, buildCookie } from '../lib/session.js';
 
 const PERSONAL_EMAIL_DOMAINS = new Set([
   'gmail.com',
@@ -26,10 +28,10 @@ const PERSONAL_EMAIL_DOMAINS = new Set([
   'gmx.com',
 ]);
 
-function json(data, status = 200) {
+function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
   });
 }
 
@@ -47,7 +49,7 @@ function isWorkEmail(email) {
   return !PERSONAL_EMAIL_DOMAINS.has(domain);
 }
 
-async function createOnboardingRequest(request, env) {
+async function createTenantBootstrap(request, env) {
   let body;
   try {
     body = await request.json();
@@ -56,19 +58,24 @@ async function createOnboardingRequest(request, env) {
   }
 
   const organisationName = body.organisation_name?.trim() ?? '';
-  const contactName = body.contact_name?.trim() ?? '';
+  const adminName = body.admin_name?.trim() ?? '';
   const workEmail = normaliseEmail(body.work_email);
   const requestedSubdomain = body.requested_subdomain?.trim().toLowerCase() ?? '';
-  const message = body.message?.trim() || null;
+  const username = body.username?.trim() ?? '';
+  const password = body.password ?? '';
 
   if (!organisationName) return error('organisation_name is required');
-  if (!contactName) return error('contact_name is required');
+  if (!adminName) return error('admin_name is required');
   if (!workEmail) return error('work_email is required');
   if (!workEmail.includes('@')) return error('work_email must be a valid email address');
   if (!isWorkEmail(workEmail)) return error('Please use a work email address');
+  if (password.length < 8) return error('Password must be at least 8 characters');
 
   const subdomainError = validateSubdomain(requestedSubdomain);
   if (subdomainError) return error(subdomainError);
+
+  const usernameError = validateUsername(username);
+  if (usernameError) return error(usernameError);
 
   const sql = getDb(env);
 
@@ -81,67 +88,119 @@ async function createOnboardingRequest(request, env) {
   `;
   if (tenantClash.length > 0) return error('requested subdomain is already in use', 409);
 
-  const requestClash = await sql`
+  const emailClash = await sql`
     SELECT id
-    FROM tenant_onboarding_requests
-    WHERE requested_subdomain = ${requestedSubdomain}
-      AND status = 'pending'
+    FROM users
+    WHERE email = ${workEmail}
     LIMIT 1
   `;
-  if (requestClash.length > 0) {
-    return error('A pending request already exists for that subdomain', 409);
-  }
+  if (emailClash.length > 0) return error('A user with this email already exists', 409);
 
-  const rows = await sql`
-    INSERT INTO tenant_onboarding_requests (
-      organisation_name,
-      contact_name,
-      work_email,
-      requested_subdomain,
-      message,
+  const usernameClash = await sql`
+    SELECT id
+    FROM users
+    WHERE LOWER(username) = ${username.toLowerCase()}
+    LIMIT 1
+  `;
+  if (usernameClash.length > 0) return error('That username is already in use', 409);
+
+  const passwordHash = await hashPassword(password);
+
+  const tenantRows = await sql`
+    INSERT INTO tenants (
+      name,
+      slug,
+      subdomain,
       status,
-      updated_at
+      contact_name,
+      contact_email,
+      activation_expires_at
     )
     VALUES (
       ${organisationName},
-      ${contactName},
-      ${workEmail},
       ${requestedSubdomain},
-      ${message},
-      'pending',
-      NOW()
+      ${requestedSubdomain},
+      'pending_verification',
+      ${adminName},
+      ${workEmail},
+      NOW() + INTERVAL '30 days'
     )
-    RETURNING id, organisation_name, contact_name, work_email, requested_subdomain, message, status, created_at
+    RETURNING id, name, slug, subdomain, status, activation_expires_at, created_at
+  `;
+  const tenant = tenantRows[0];
+
+  const userRows = await sql`
+    INSERT INTO users (email, username, password_hash, full_name, is_platform_admin)
+    VALUES (${workEmail}, ${username}, ${passwordHash}, ${adminName}, false)
+    RETURNING id, email, username, full_name, is_platform_admin
+  `;
+  const user = userRows[0];
+
+  await sql`
+    INSERT INTO memberships (tenant_id, user_id, role)
+    VALUES (${tenant.id}, ${user.id}, 'tenant_admin')
   `;
 
-  const onboardingRequest = rows[0];
+  await sql`
+    INSERT INTO tenant_limits (tenant_id, max_staff_users, max_applications)
+    VALUES (${tenant.id}, 3, 50)
+  `;
+
+  await sql`
+    INSERT INTO tenant_role_assignments (tenant_id, email, role, status, created_by_user_id)
+    VALUES (${tenant.id}, ${workEmail}, 'tenant_admin', 'active', ${user.id})
+  `;
+
+  await sql`
+    INSERT INTO tenant_enabled_application_types (tenant_id, application_type_id)
+    SELECT ${tenant.id}, at.id
+    FROM application_types at
+    WHERE at.is_active = true
+    ON CONFLICT (tenant_id, application_type_id) DO NOTHING
+  `;
 
   await writeAuditLog(sql, {
     tenantId: null,
     actorType: 'system',
     actorId: null,
-    action: 'tenant_onboarding_request.created',
-    recordType: 'tenant_onboarding_request',
-    recordId: onboardingRequest.id,
+    action: 'tenant.self_serve_signup.created',
+    recordType: 'tenant',
+    recordId: tenant.id,
     meta: {
-      organisation_name: onboardingRequest.organisation_name,
-      requested_subdomain: onboardingRequest.requested_subdomain,
-      work_email: onboardingRequest.work_email,
+      organisation_name: tenant.name,
+      requested_subdomain: tenant.subdomain,
+      work_email: user.email,
+      username: user.username,
+      initial_role: 'tenant_admin',
     },
   });
 
+  const token = await signSession({
+    user_id: user.id,
+    email: user.email,
+    username: user.username,
+    full_name: user.full_name,
+    is_platform_admin: false,
+    tenant_id: tenant.id,
+    tenant_slug: tenant.slug,
+    role: 'tenant_admin',
+  }, env.JWT_SECRET);
+
   return json({
-    request: onboardingRequest,
-    message: 'Request received. We will review it and contact you directly.',
-  }, 201);
+    tenant,
+    user,
+    message: 'Admin account created. Continue with tenant setup.',
+  }, 201, {
+    'Set-Cookie': buildCookie(token),
+  });
 }
 
 export async function handlePlatformPublicRoutes(request, env) {
   const url = new URL(request.url);
   const { method } = request;
 
-  if (method === 'POST' && url.pathname === '/api/platform/request-access') {
-    return createOnboardingRequest(request, env);
+  if (method === 'POST' && url.pathname === '/api/platform/signup') {
+    return createTenantBootstrap(request, env);
   }
 
   return null;

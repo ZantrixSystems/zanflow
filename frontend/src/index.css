@@ -145,6 +145,11 @@ body { min-height: 100vh; }
   background: var(--color-bg);
 }
 
+.platform-auth-page {
+  min-height: auto;
+  padding-top: 24px;
+}
+
 .auth-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -269,6 +274,25 @@ body { min-height: 100vh; }
   padding-bottom: 12px;
   border-bottom: 1px solid var(--color-border);
   margin-bottom: 24px;
+}
+
+.subdomain-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.subdomain-suffix {
+  display: inline-flex;
+  align-items: center;
+  padding: 11px 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface-low);
+  color: var(--color-text-muted);
+  font-size: .9375rem;
+  white-space: nowrap;
 }
 
 /* ============================================================
@@ -407,6 +431,65 @@ body { min-height: 100vh; }
   text-transform: uppercase;
   color: var(--color-text-muted);
   margin-bottom: 16px;
+}
+
+.platform-admin-topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.platform-admin-topbar-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.platform-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.platform-summary-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface-low);
+  padding: 16px;
+}
+
+.platform-summary-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.platform-member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.platform-member-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  background: var(--color-surface-low);
+}
+
+.platform-member-meta {
+  font-size: .875rem;
+  color: var(--color-text-muted);
 }
 
 /* Application type cards */
@@ -742,6 +825,10 @@ body { min-height: 100vh; }
   .platform-feature-grid {
     grid-template-columns: 1fr;
   }
+
+  .platform-admin-topbar {
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 640px) {
@@ -761,6 +848,10 @@ body { min-height: 100vh; }
   }
 
   .platform-step {
+    grid-template-columns: 1fr;
+  }
+
+  .subdomain-input-row {
     grid-template-columns: 1fr;
   }
 }

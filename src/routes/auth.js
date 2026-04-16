@@ -24,15 +24,17 @@ async function login(request, env) {
     return error('Invalid JSON body');
   }
 
-  const { email, password } = body;
-  if (!email || !password) return error('Email and password are required');
+  const identifier = body.identifier?.trim() || body.email?.trim() || '';
+  const { password } = body;
+  if (!identifier || !password) return error('Username or email and password are required');
 
   const sql = getDb(env);
 
   const users = await sql`
-    SELECT id, email, full_name, password_hash, is_platform_admin
+    SELECT id, email, username, full_name, password_hash, is_platform_admin
     FROM users
-    WHERE email = ${email.toLowerCase().trim()}
+    WHERE email = ${identifier.toLowerCase()}
+       OR LOWER(username) = ${identifier.toLowerCase()}
   `;
 
   // Return identical error whether user not found or password wrong
@@ -59,6 +61,7 @@ async function login(request, env) {
   const payload = {
     user_id:          user.id,
     email:            user.email,
+    username:         user.username,
     full_name:        user.full_name,
     is_platform_admin: user.is_platform_admin,
     tenant_id:        membership?.tenant_id  ?? null,
@@ -73,6 +76,7 @@ async function login(request, env) {
       user: {
         id:               user.id,
         email:            user.email,
+        username:         user.username,
         full_name:        user.full_name,
         is_platform_admin: user.is_platform_admin,
       },

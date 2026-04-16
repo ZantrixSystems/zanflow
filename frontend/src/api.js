@@ -66,6 +66,17 @@ export const api = {
   submitApplication: (id)       => request('POST',   `/api/applications/${id}/submit`),
   deleteApplication: (id)       => request('DELETE', `/api/applications/${id}`),
 
-  // Platform landing
-  requestAccess: (body) => request('POST', '/api/platform/request-access', body, { includeTenantHeader: false }),
+  // Platform bootstrap
+  platformCreateAdminAccount: (body) =>
+    request('POST', '/api/platform/signup', body, { includeTenantHeader: false }),
+  staffSignIn: (body) =>
+    request('POST', '/api/auth/login', body, { includeTenantHeader: false }),
+  staffSignOut: () =>
+    request('POST', '/api/auth/logout', undefined, { includeTenantHeader: false }),
+  getBootstrapContext: () =>
+    request('GET', '/api/platform/bootstrap/me', undefined, { includeTenantHeader: false }),
+  saveBootstrapRoleAssignments: (body) =>
+    request('PUT', '/api/platform/bootstrap/role-assignments', body, { includeTenantHeader: false }),
+  activateBootstrapTenant: () =>
+    request('POST', '/api/platform/bootstrap/activate', undefined, { includeTenantHeader: false }),
 };

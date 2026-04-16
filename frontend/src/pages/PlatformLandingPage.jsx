@@ -1,16 +1,20 @@
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout.jsx';
 import { api } from '../api.js';
 
 const initialForm = {
   organisation_name: '',
-  contact_name: '',
+  admin_name: '',
   work_email: '',
   requested_subdomain: '',
-  message: '',
+  username: '',
+  password: '',
+  confirm: '',
 };
 
 export default function PlatformLandingPage() {
+  const navigate = useNavigate();
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -27,14 +31,27 @@ export default function PlatformLandingPage() {
     event.preventDefault();
     setError('');
     setSuccess('');
+
+    if (form.password !== form.confirm) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      const response = await api.requestAccess(form);
-      setSuccess(response.message || 'Request received.');
-      setForm(initialForm);
+      const response = await api.platformCreateAdminAccount({
+        organisation_name: form.organisation_name,
+        admin_name: form.admin_name,
+        work_email: form.work_email,
+        requested_subdomain: form.requested_subdomain,
+        username: form.username,
+        password: form.password,
+      });
+      setSuccess(response.message || 'Admin account created.');
+      navigate('/admin/onboarding');
     } catch (err) {
-      setError(err.message || 'Could not send request.');
+      setError(err.message || 'Could not create admin account.');
     } finally {
       setSubmitting(false);
     }
@@ -46,15 +63,15 @@ export default function PlatformLandingPage() {
         <div className="platform-hero-copy">
           <div className="section-heading">Council Licensing Platform</div>
           <h1 className="page-title platform-hero-title">
-            Multi-tenant licensing for councils, built for controlled rollout.
+            Create the first council admin account and bootstrap your tenant.
           </h1>
           <p className="page-subtitle platform-hero-subtitle">
-            ZanFlo gives councils a tenant-specific portal for applicants and staff,
-            while keeping onboarding, governance, and platform administration under central control.
+            This is for the council&apos;s initial break-glass admin only.
+            Public applicants and day-to-day officers do not sign up here.
           </p>
           <div className="platform-hero-actions">
-            <a className="btn btn-primary" href="#request-access">Request access</a>
-            <a className="btn btn-secondary" href="#existing-users">Already using ZanFlo?</a>
+            <a className="btn btn-primary" href="#request-access">Create admin account</a>
+            <Link className="btn btn-secondary" to="/admin/sign-in">Admin sign in</Link>
           </div>
         </div>
 
@@ -63,7 +80,7 @@ export default function PlatformLandingPage() {
           <div className="platform-url-list">
             <div className="platform-url-item">
               <strong>zanflo.com</strong>
-              <span>Platform landing page and council onboarding entry point.</span>
+              <span>Platform landing page and tenant bootstrap entry point.</span>
             </div>
             <div className="platform-url-item">
               <strong>platform.zanflo.com</strong>
@@ -71,7 +88,7 @@ export default function PlatformLandingPage() {
             </div>
             <div className="platform-url-item">
               <strong>&lt;tenant&gt;.zanflo.com</strong>
-              <span>Tenant-specific portal for applicants and council staff.</span>
+              <span>Tenant-specific portal for applicants and council staff after activation.</span>
             </div>
           </div>
         </div>
@@ -85,8 +102,8 @@ export default function PlatformLandingPage() {
             Each council operates within its own tenant boundary, with separate data, users, and public-facing hostname.
           </p>
           <p className="platform-body-copy">
-            The platform is designed for operational clarity: applicants submit online, staff process cases inside a fixed workflow,
-            and platform-level onboarding remains deliberate rather than self-provisioned.
+            The first account created here becomes the local fallback admin account.
+            SSO can be layered on later without removing that recovery path.
           </p>
         </div>
       </section>
@@ -99,12 +116,12 @@ export default function PlatformLandingPage() {
             <p>Each council runs independently on the same platform without data leakage across tenants.</p>
           </article>
           <article className="platform-feature-card">
-            <h2>Operationally practical</h2>
-            <p>Application flows stay simple for the public and efficient for officers reviewing live casework.</p>
+            <h2>Break-glass admin first</h2>
+            <p>The first account remains available even after single sign-on is enabled later.</p>
           </article>
           <article className="platform-feature-card">
-            <h2>Controlled onboarding</h2>
-            <p>New councils request access centrally first, so rollout, validation, and domain allocation stay governed.</p>
+            <h2>Controlled activation</h2>
+            <p>The tenant starts in a pending state, then moves into trial once the first setup is complete.</p>
           </article>
         </div>
       </section>
@@ -115,35 +132,38 @@ export default function PlatformLandingPage() {
           <div className="platform-step">
             <span className="platform-step-number">01</span>
             <div>
-              <h2>Council requests access</h2>
-              <p>A council submits an onboarding request with its organisation details and preferred subdomain.</p>
+              <h2>Create the first admin account</h2>
+              <p>Enter the council name, work email, username, password, and the subdomain you want to reserve.</p>
             </div>
           </div>
           <div className="platform-step">
             <span className="platform-step-number">02</span>
             <div>
-              <h2>ZanFlo reviews and prepares the tenant</h2>
-              <p>The platform team validates the request, provisions the tenant manually, and assigns the first admin safely.</p>
+              <h2>Complete tenant setup</h2>
+              <p>Use the onboarding area to review tenant details and assign the first staff roles by email.</p>
             </div>
           </div>
           <div className="platform-step">
             <span className="platform-step-number">03</span>
             <div>
-              <h2>The council operates on its own hostname</h2>
-              <p>Applicants and tenant staff use the council’s dedicated subdomain rather than the platform apex domain.</p>
+              <h2>Move into trial</h2>
+              <p>Start the tenant trial when setup is complete and continue on the council hostname.</p>
             </div>
           </div>
         </div>
       </section>
 
       <section className="form-section" id="request-access">
-        <div className="form-section-title">Request Access</div>
+        <div className="form-section-title">Create Admin Account</div>
         <div className="platform-request-grid">
           <div>
-            <h2 className="platform-section-heading">Start a controlled onboarding request</h2>
+            <h2 className="platform-section-heading">Create the break-glass tenant admin</h2>
             <p className="platform-body-copy">
-              This request does not create a tenant automatically. It opens a platform review step so the council,
-              subdomain, and initial operating setup can be checked before activation.
+              This creates the first local admin account for your council tenant.
+              The requested name becomes your council subdomain as <strong>{form.requested_subdomain || 'your-name'}.zanflo.com</strong>.
+            </p>
+            <p className="platform-body-copy">
+              Later, this same settings area can hold SAML, OAuth, or other SSO configuration without removing this fallback account.
             </p>
           </div>
 
@@ -162,11 +182,11 @@ export default function PlatformLandingPage() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="contact_name">Contact name</label>
+              <label htmlFor="admin_name">Admin name</label>
               <input
-                id="contact_name"
-                value={form.contact_name}
-                onChange={(event) => update('contact_name', event.target.value)}
+                id="admin_name"
+                value={form.admin_name}
+                onChange={(event) => update('admin_name', event.target.value)}
                 required
               />
             </div>
@@ -186,23 +206,52 @@ export default function PlatformLandingPage() {
 
             <div className="form-group">
               <label htmlFor="requested_subdomain">Requested subdomain</label>
-              <input
-                id="requested_subdomain"
-                value={form.requested_subdomain}
-                onChange={(event) => update('requested_subdomain', event.target.value.replace(/\s+/g, ''))}
-                required
-              />
-              <div className="form-hint">Example: `northbridge` for `northbridge.zanflo.com`</div>
+              <div className="subdomain-input-row">
+                <input
+                  id="requested_subdomain"
+                  value={form.requested_subdomain}
+                  onChange={(event) => update('requested_subdomain', event.target.value.replace(/\s+/g, ''))}
+                  required
+                />
+                <span className="subdomain-suffix">.zanflo.com</span>
+              </div>
+              <div className="form-hint">Use only the left-hand name. Example: `northbridge` becomes `northbridge.zanflo.com`.</div>
             </div>
 
             <div className="form-group">
-              <label htmlFor="message">Message</label>
-              <textarea
-                id="message"
-                value={form.message}
-                onChange={(event) => update('message', event.target.value)}
+              <label htmlFor="username">Username</label>
+              <input
+                id="username"
+                value={form.username}
+                onChange={(event) => update('username', event.target.value)}
+                autoComplete="username"
+                required
               />
-              <div className="form-hint">Optional context such as rollout timing, licence type, or internal sponsor.</div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                type="password"
+                value={form.password}
+                onChange={(event) => update('password', event.target.value)}
+                autoComplete="new-password"
+                required
+              />
+              <div className="form-hint">Minimum 8 characters.</div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="confirm">Confirm password</label>
+              <input
+                id="confirm"
+                type="password"
+                value={form.confirm}
+                onChange={(event) => update('confirm', event.target.value)}
+                autoComplete="new-password"
+                required
+              />
             </div>
 
             <button
@@ -211,12 +260,15 @@ export default function PlatformLandingPage() {
               disabled={
                 submitting ||
                 !form.organisation_name ||
-                !form.contact_name ||
+                !form.admin_name ||
                 !form.work_email ||
-                !form.requested_subdomain
+                !form.requested_subdomain ||
+                !form.username ||
+                !form.password ||
+                !form.confirm
               }
             >
-              {submitting ? 'Sending request…' : 'Request access'}
+              {submitting ? 'Creating account…' : 'Create admin account'}
             </button>
           </form>
         </div>
@@ -226,8 +278,8 @@ export default function PlatformLandingPage() {
         <div className="form-section-title">Existing Users</div>
         <div className="platform-guidance-grid">
           <article className="platform-guidance-card">
-            <h2>Council applicants and tenant staff</h2>
-            <p>Use your council’s dedicated subdomain, not the platform root domain.</p>
+            <h2>Existing council admins</h2>
+            <p>Use the admin sign-in page on the platform apex to return to onboarding and bootstrap settings.</p>
           </article>
           <article className="platform-guidance-card">
             <h2>Platform administrators</h2>

@@ -7,6 +7,8 @@ import DashboardPage from './pages/DashboardPage.jsx';
 import ApplicationPage from './pages/ApplicationPage.jsx';
 import PlatformLandingPage from './pages/PlatformLandingPage.jsx';
 import PlatformAdminHomePage from './pages/PlatformAdminHomePage.jsx';
+import PlatformAdminSignInPage from './pages/PlatformAdminSignInPage.jsx';
+import PlatformBootstrapPage from './pages/PlatformBootstrapPage.jsx';
 import RequireAuth from './components/RequireAuth.jsx';
 
 function getHostMode() {
@@ -35,6 +37,8 @@ export default function App() {
     return (
       <Routes>
         <Route path="/" element={<PlatformLandingPage />} />
+        <Route path="/admin/sign-in" element={<PlatformAdminSignInPage />} />
+        <Route path="/admin/onboarding" element={<PlatformBootstrapPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );

@@ -8,7 +8,8 @@
     "build": "npm --prefix frontend run build",
     "deploy": "npm run build && wrangler deploy",
     "migrate": "node scripts/migrate.js",
-    "seed": "node scripts/seed.js"
+    "seed": "node scripts/seed.js",
+    "reset:dev-db": "node scripts/reset-dev-db.js --confirm-reset"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.9.0"

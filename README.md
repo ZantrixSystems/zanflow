@@ -77,6 +77,21 @@ Backend:
 npx wrangler dev
 ```
 
+Reset the dev database to a fresh state:
+```bash
+npm run reset:dev-db
+```
+
+Recreate the internal Riverside test tenant if needed later:
+```bash
+npm run seed
+```
+
+Apply pending schema changes:
+```bash
+npm run migrate
+```
+
 Additional backend secrets for the current encryption spike:
 ```bash
 GOOGLE_KMS_KEY_NAME=projects/.../locations/.../keyRings/.../cryptoKeys/...
