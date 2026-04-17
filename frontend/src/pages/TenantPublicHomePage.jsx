@@ -54,18 +54,31 @@ export default function TenantPublicHomePage() {
 
       <section className="form-section">
         <div className="form-section-title">What you can do here</div>
-        <div className="platform-feature-grid">
-          <article className="platform-feature-card">
-            <h2>Create your applicant account</h2>
-            <p>Keep your own sign-in separate from council staff accounts and stay within this council&apos;s service only.</p>
+        <div className="dashboard-action-list">
+          <article className="dashboard-action-row">
+            <div className="dashboard-action-copy">
+              <h2>Create your applicant account</h2>
+              <p>Keep your own sign-in separate from council staff accounts and stay within this council&apos;s service only.</p>
+            </div>
+            <Link className="btn btn-secondary" to={session ? '/dashboard' : '/register?next=%2Fapply'}>
+              {session ? 'Open dashboard' : 'Create account'}
+            </Link>
           </article>
-          <article className="platform-feature-card">
-            <h2>Start online</h2>
-            <p>Begin a new premises licence application, save it as a draft, and submit when you are ready.</p>
+          <article className="dashboard-action-row">
+            <div className="dashboard-action-copy">
+              <h2>Start online</h2>
+              <p>Begin a new premises licence application, save it as a draft, and submit when you are ready.</p>
+            </div>
+            <Link className="btn btn-primary" to="/apply">Start</Link>
           </article>
-          <article className="platform-feature-card">
-            <h2>Track progress</h2>
-            <p>Return later to review your drafts, submitted applications, and any requests for more information.</p>
+          <article className="dashboard-action-row">
+            <div className="dashboard-action-copy">
+              <h2>Track progress</h2>
+              <p>Return later to review your drafts, submitted applications, and any requests for more information.</p>
+            </div>
+            <Link className="btn btn-secondary" to={session ? '/dashboard' : '/login?next=%2Fdashboard'}>
+              {session ? 'View applications' : 'Sign in'}
+            </Link>
           </article>
         </div>
       </section>

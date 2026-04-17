@@ -35,43 +35,55 @@ export default function TenantAdminDashboardPage() {
       </section>
 
       {session.role === 'tenant_admin' && settings && (
-        <section className="platform-feature-grid">
-          <article className="platform-feature-card">
-            <h2>Organisation settings</h2>
-            <p>{settings.organisation.council_display_name || settings.organisation.council_name}</p>
-            <Link className="btn btn-secondary" to="/admin/settings">Open setup workspace</Link>
+        <section className="dashboard-action-list">
+          <article className="dashboard-action-row">
+            <div className="dashboard-action-copy">
+              <h2>Organisation settings</h2>
+              <p>{settings.organisation.council_display_name || settings.organisation.council_name}</p>
+            </div>
+            <Link className="btn btn-secondary" to="/admin/settings">Open setup</Link>
           </article>
-          <article className="platform-feature-card">
-            <h2>Branding and homepage</h2>
-            <p>{settings.branding.welcome_text || 'Add welcome text and public homepage details for applicants.'}</p>
-            <Link className="btn btn-secondary" to="/admin/settings">Update public site</Link>
+          <article className="dashboard-action-row">
+            <div className="dashboard-action-copy">
+              <h2>Branding and homepage</h2>
+              <p>{settings.branding.welcome_text || 'Add welcome text and public homepage details for applicants.'}</p>
+            </div>
+            <Link className="btn btn-secondary" to="/admin/settings">Edit</Link>
           </article>
-          <article className="platform-feature-card">
-            <h2>Identity and SSO</h2>
-            <p>{settings.sso.auth_runtime_status === 'configuration_only' ? 'Configuration can be saved now. Live SSO sign-in is not active yet.' : settings.sso.auth_runtime_status}</p>
-            <Link className="btn btn-secondary" to="/admin/settings">Review identity settings</Link>
+          <article className="dashboard-action-row">
+            <div className="dashboard-action-copy">
+              <h2>Identity and SSO</h2>
+              <p>{settings.sso.auth_runtime_status === 'configuration_only' ? 'Configuration can be saved now. Live SSO sign-in is not active yet.' : settings.sso.auth_runtime_status}</p>
+            </div>
+            <Link className="btn btn-secondary" to="/admin/settings">Configure</Link>
           </article>
         </section>
       )}
 
-      <section className="platform-feature-grid">
+      <section className="dashboard-action-list">
         {['officer', 'manager'].includes(session.role) && (
-          <article className="platform-feature-card">
-            <h2>Application queue</h2>
-            <p>Pick up submitted applications, review current cases, and complete decisions.</p>
-            <Link className="btn btn-primary" to="/admin/applications">Open queue</Link>
+          <article className="dashboard-action-row">
+            <div className="dashboard-action-copy">
+              <h2>Application queue</h2>
+              <p>Pick up submitted applications, review current cases, and complete decisions.</p>
+            </div>
+            <Link className="btn btn-primary" to="/admin/applications">Open</Link>
           </article>
         )}
 
-        <article className="platform-feature-card">
-          <h2>Tenant users</h2>
-          <p>Manage tenant staff access and role assignment within this council only.</p>
-          <Link className="btn btn-secondary" to="/admin/users">Manage users</Link>
+        <article className="dashboard-action-row">
+          <div className="dashboard-action-copy">
+            <h2>Tenant users</h2>
+            <p>Manage tenant staff access and role assignment within this council only.</p>
+          </div>
+          <Link className="btn btn-secondary" to="/admin/users">Manage</Link>
         </article>
 
-        <article className="platform-feature-card">
-          <h2>Settings and audit</h2>
-          <p>Keep tenant contact details current and review recent tenant-scoped activity.</p>
+        <article className="dashboard-action-row">
+          <div className="dashboard-action-copy">
+            <h2>Settings and audit</h2>
+            <p>Keep tenant contact details current and review recent tenant-scoped activity.</p>
+          </div>
           <div className="platform-hero-actions">
             <Link className="btn btn-secondary" to="/admin/settings">Settings</Link>
             <Link className="btn btn-secondary" to="/admin/audit">Audit</Link>

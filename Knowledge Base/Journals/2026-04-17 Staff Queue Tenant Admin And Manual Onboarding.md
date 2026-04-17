@@ -151,6 +151,15 @@ Verification:
 
 - `npm --prefix frontend run build`
 
+Update:
+
+- reused the new stacked action-row pattern beyond the council admin dashboard
+- applied it to the tenant public homepage action area so applicants now see clearer row-based actions with direct buttons for:
+  - create account
+  - start
+  - sign in or open dashboard
+- deliberately left the apex marketing homepage in its existing marketing layout so informational content still reads like a landing page rather than an admin menu
+
 ---
 
 ## Tenant Admin And Applicant Navigation Consistency Pass
