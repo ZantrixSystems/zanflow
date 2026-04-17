@@ -160,6 +160,12 @@ Update:
   - sign in or open dashboard
 - deliberately left the apex marketing homepage in its existing marketing layout so informational content still reads like a landing page rather than an admin menu
 
+Alignment refinement:
+
+- tightened the action-row layout so buttons now sit on a fixed right-hand action rail
+- normalised action button widths so rows line up cleanly even when button labels differ
+- applied that lock-up to both the tenant admin dashboard and the tenant public portal action rows
+
 ---
 
 ## Tenant Admin And Applicant Navigation Consistency Pass

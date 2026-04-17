@@ -41,21 +41,27 @@ export default function TenantAdminDashboardPage() {
               <h2>Organisation settings</h2>
               <p>{settings.organisation.council_display_name || settings.organisation.council_name}</p>
             </div>
-            <Link className="btn btn-secondary" to="/admin/settings">Open setup</Link>
+            <div className="dashboard-action-controls">
+              <Link className="btn btn-secondary" to="/admin/settings">Open setup</Link>
+            </div>
           </article>
           <article className="dashboard-action-row">
             <div className="dashboard-action-copy">
               <h2>Branding and homepage</h2>
               <p>{settings.branding.welcome_text || 'Add welcome text and public homepage details for applicants.'}</p>
             </div>
-            <Link className="btn btn-secondary" to="/admin/settings">Edit</Link>
+            <div className="dashboard-action-controls">
+              <Link className="btn btn-secondary" to="/admin/settings">Edit</Link>
+            </div>
           </article>
           <article className="dashboard-action-row">
             <div className="dashboard-action-copy">
               <h2>Identity and SSO</h2>
               <p>{settings.sso.auth_runtime_status === 'configuration_only' ? 'Configuration can be saved now. Live SSO sign-in is not active yet.' : settings.sso.auth_runtime_status}</p>
             </div>
-            <Link className="btn btn-secondary" to="/admin/settings">Configure</Link>
+            <div className="dashboard-action-controls">
+              <Link className="btn btn-secondary" to="/admin/settings">Configure</Link>
+            </div>
           </article>
         </section>
       )}
@@ -67,7 +73,9 @@ export default function TenantAdminDashboardPage() {
               <h2>Application queue</h2>
               <p>Pick up submitted applications, review current cases, and complete decisions.</p>
             </div>
-            <Link className="btn btn-primary" to="/admin/applications">Open</Link>
+            <div className="dashboard-action-controls">
+              <Link className="btn btn-primary" to="/admin/applications">Open</Link>
+            </div>
           </article>
         )}
 
@@ -76,7 +84,9 @@ export default function TenantAdminDashboardPage() {
             <h2>Tenant users</h2>
             <p>Manage tenant staff access and role assignment within this council only.</p>
           </div>
-          <Link className="btn btn-secondary" to="/admin/users">Manage</Link>
+          <div className="dashboard-action-controls">
+            <Link className="btn btn-secondary" to="/admin/users">Manage</Link>
+          </div>
         </article>
 
         <article className="dashboard-action-row">
@@ -84,7 +94,7 @@ export default function TenantAdminDashboardPage() {
             <h2>Settings and audit</h2>
             <p>Keep tenant contact details current and review recent tenant-scoped activity.</p>
           </div>
-          <div className="platform-hero-actions">
+          <div className="dashboard-action-controls dashboard-action-controls-double">
             <Link className="btn btn-secondary" to="/admin/settings">Settings</Link>
             <Link className="btn btn-secondary" to="/admin/audit">Audit</Link>
           </div>

@@ -60,25 +60,31 @@ export default function TenantPublicHomePage() {
               <h2>Create your applicant account</h2>
               <p>Keep your own sign-in separate from council staff accounts and stay within this council&apos;s service only.</p>
             </div>
-            <Link className="btn btn-secondary" to={session ? '/dashboard' : '/register?next=%2Fapply'}>
-              {session ? 'Open dashboard' : 'Create account'}
-            </Link>
+            <div className="dashboard-action-controls">
+              <Link className="btn btn-secondary" to={session ? '/dashboard' : '/register?next=%2Fapply'}>
+                {session ? 'Open dashboard' : 'Create account'}
+              </Link>
+            </div>
           </article>
           <article className="dashboard-action-row">
             <div className="dashboard-action-copy">
               <h2>Start online</h2>
               <p>Begin a new premises licence application, save it as a draft, and submit when you are ready.</p>
             </div>
-            <Link className="btn btn-primary" to="/apply">Start</Link>
+            <div className="dashboard-action-controls">
+              <Link className="btn btn-primary" to="/apply">Start</Link>
+            </div>
           </article>
           <article className="dashboard-action-row">
             <div className="dashboard-action-copy">
               <h2>Track progress</h2>
               <p>Return later to review your drafts, submitted applications, and any requests for more information.</p>
             </div>
-            <Link className="btn btn-secondary" to={session ? '/dashboard' : '/login?next=%2Fdashboard'}>
-              {session ? 'View applications' : 'Sign in'}
-            </Link>
+            <div className="dashboard-action-controls">
+              <Link className="btn btn-secondary" to={session ? '/dashboard' : '/login?next=%2Fdashboard'}>
+                {session ? 'View applications' : 'Sign in'}
+              </Link>
+            </div>
           </article>
         </div>
       </section>
