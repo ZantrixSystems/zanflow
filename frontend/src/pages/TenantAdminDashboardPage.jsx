@@ -38,7 +38,7 @@ export default function TenantAdminDashboardPage() {
         <section className="form-section">
           <div className="form-section-title">Council URL guide</div>
           <p className="page-subtitle" style={{ marginBottom: 24 }}>
-            Use these council-specific links so staff and applicants go to the right place. Platform admin users do not use these links.
+            Use these council-specific links during setup and day-to-day support so staff and applicants go to the right place. Platform admin users do not use these links.
           </p>
 
           <div className="dashboard-url-list">
@@ -55,10 +55,60 @@ export default function TenantAdminDashboardPage() {
             <article className="dashboard-url-row">
               <div className="dashboard-url-copy">
                 <h2>Council admin and staff sign-in</h2>
-                <p>This is where tenant admins, managers, and officers sign in. Tenant admins manage settings, users, and audit. Managers and officers manage application work.</p>
+                <p>This is the shared sign-in page for tenant admins, managers, and officers. After sign-in, each role only sees the areas they are allowed to use.</p>
               </div>
               <div className="dashboard-url-meta">
                 <strong>{`${settings.tenant.subdomain}.zanflo.com/admin`}</strong>
+              </div>
+            </article>
+
+            <article className="dashboard-url-row">
+              <div className="dashboard-url-copy">
+                <h2>Staff dashboard</h2>
+                <p>Main landing page after staff sign-in. Use this when guiding users back to their workspace.</p>
+              </div>
+              <div className="dashboard-url-meta">
+                <strong>{`${settings.tenant.subdomain}.zanflo.com/admin/dashboard`}</strong>
+              </div>
+            </article>
+
+            <article className="dashboard-url-row">
+              <div className="dashboard-url-copy">
+                <h2>Application queue</h2>
+                <p>For managers and officers to pick up, review, and decide applications. Tenant admins do not process applications directly.</p>
+              </div>
+              <div className="dashboard-url-meta">
+                <strong>{`${settings.tenant.subdomain}.zanflo.com/admin/applications`}</strong>
+              </div>
+            </article>
+
+            <article className="dashboard-url-row">
+              <div className="dashboard-url-copy">
+                <h2>Tenant users</h2>
+                <p>For tenant admins to add staff users and set roles such as tenant admin, manager, and officer.</p>
+              </div>
+              <div className="dashboard-url-meta">
+                <strong>{`${settings.tenant.subdomain}.zanflo.com/admin/users`}</strong>
+              </div>
+            </article>
+
+            <article className="dashboard-url-row">
+              <div className="dashboard-url-copy">
+                <h2>Tenant settings</h2>
+                <p>For tenant admins to complete organisation setup, branding, and saved SSO configuration.</p>
+              </div>
+              <div className="dashboard-url-meta">
+                <strong>{`${settings.tenant.subdomain}.zanflo.com/admin/settings`}</strong>
+              </div>
+            </article>
+
+            <article className="dashboard-url-row">
+              <div className="dashboard-url-copy">
+                <h2>Audit log</h2>
+                <p>For tenant admins to review recent tenant-scoped activity and support operational checks.</p>
+              </div>
+              <div className="dashboard-url-meta">
+                <strong>{`${settings.tenant.subdomain}.zanflo.com/admin/audit`}</strong>
               </div>
             </article>
 

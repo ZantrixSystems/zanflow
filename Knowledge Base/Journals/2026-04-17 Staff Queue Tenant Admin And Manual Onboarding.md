@@ -174,6 +174,34 @@ Scope:
 - frontend copy only
 - no route, permission, or data model change
 
+---
+
+## Tenant Dashboard Link Guide Expansion
+
+Confidence Level: High
+
+Reason:
+
+- the original council URL guide was too minimal for real setup and support use
+- tenant admins need a practical list of the main council routes, not just the top-level entry points
+- support guidance is clearer when the route purpose and role boundary are shown together
+
+What changed:
+
+- expanded the tenant admin dashboard guide panel to include:
+  - `/admin/dashboard`
+  - `/admin/applications`
+  - `/admin/users`
+  - `/admin/settings`
+  - `/admin/audit`
+- clarified the purpose of each route in plain language
+- kept the role boundary explicit so the guide does not imply that `tenant_admin` processes applications directly
+
+Scope:
+
+- frontend copy and guidance only
+- no auth, routing, or permission logic changed
+
 Update:
 
 - reused the new stacked action-row pattern beyond the council admin dashboard
