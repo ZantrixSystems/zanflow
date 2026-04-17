@@ -621,4 +621,18 @@ describe('slice 1 - auth foundation', () => {
 
     expect(response.status).toBe(403);
   });
+
+  it('returns a tenant not found page for a deleted or unknown tenant host', async () => {
+    const response = await fetchWorker('https://example.test/', {
+      method: 'GET',
+      host: 'test-missing-tenant.zanflo.com',
+      headers: {
+        Accept: 'text/html',
+      },
+    });
+
+    expect(response.status).toBe(404);
+    const html = await response.text();
+    expect(html).toContain('Tenant not found');
+  });
 });

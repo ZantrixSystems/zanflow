@@ -34,11 +34,97 @@ import { handlePremisesRoutes }        from './routes/premises.js';
 import { handleStaffAuthRoutes }       from './routes/staff-auth.js';
 import { handleTenantPublicRoutes }    from './routes/tenant-public.js';
 import { getDb }                       from './db/client.js';
+import { isTenantHost }                from './lib/request-context.js';
+import { resolveTenant }               from './lib/tenant-resolver.js';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function tenantUnavailableHtml() {
+  return new Response(`<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tenant not found</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f1e8;
+        --panel: #fffaf2;
+        --border: #d8c8ab;
+        --text: #1f2328;
+        --muted: #615c55;
+        --accent: #7d4e10;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background:
+          radial-gradient(circle at top left, rgba(125, 78, 16, 0.10), transparent 30%),
+          linear-gradient(180deg, #f8f5ef 0%, var(--bg) 100%);
+        color: var(--text);
+        font: 16px/1.5 Georgia, "Times New Roman", serif;
+      }
+      .panel {
+        width: min(680px, 100%);
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 32px;
+        box-shadow: 0 18px 60px rgba(67, 48, 17, 0.10);
+      }
+      .eyebrow {
+        margin: 0 0 8px;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2rem, 4vw, 3rem);
+        line-height: 1.1;
+      }
+      p {
+        margin: 0 0 14px;
+        color: var(--muted);
+      }
+      a {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 12px 18px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: #fffaf2;
+        text-decoration: none;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="panel">
+      <p class="eyebrow">Tenant unavailable</p>
+      <h1>Tenant not found</h1>
+      <p>This council site does not exist, has been deleted, or is not currently active.</p>
+      <p>Check the web address and try again. If you expected this council portal to be available, return to the main Zanflo site or contact platform support.</p>
+      <a href="https://zanflo.com">Go to zanflo.com</a>
+    </main>
+  </body>
+</html>`, {
+    status: 404,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+    },
   });
 }
 
@@ -159,9 +245,26 @@ export default {
 
   async fetch(request, env) {
     const url = new URL(request.url);
+    const sql = getDb(env);
 
     // Only handle /api/* — everything else falls through to static assets
     if (!url.pathname.startsWith('/api/')) {
+      if (isTenantHost(request) && url.pathname !== '/admin/bootstrap') {
+        const accept = request.headers.get('accept') ?? '';
+        const tenant = await resolveTenant(request, sql, env);
+
+        if (!tenant) {
+          if (accept.includes('text/html')) {
+            return tenantUnavailableHtml();
+          }
+
+          return new Response('Tenant not found', {
+            status: 404,
+            headers: { 'Cache-Control': 'no-store' },
+          });
+        }
+      }
+
       // Return null to let the assets binding serve the file.
       // If no asset matches, the binding returns a 404 automatically.
       return env.ASSETS.fetch(request);
