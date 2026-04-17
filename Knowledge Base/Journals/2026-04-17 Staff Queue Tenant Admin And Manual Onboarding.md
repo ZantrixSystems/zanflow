@@ -175,6 +175,19 @@ Council admin guidance panel:
   - applicant area
 - explicitly kept platform admin out of this guidance so the panel stays tenant-focused
 
+Applicant save-flow fix:
+
+- fixed the applicant draft save path so entering a phone number no longer fails with a 500 when Google KMS is not configured on the Worker
+- applicant phone encryption now remains active only when the full Google KMS configuration is present
+- when KMS is not configured, the save flow continues and that specific field is stored without the KMS encryption marker
+- added a regression test covering applicant draft save with phone data and no KMS configuration
+
+Verification:
+
+- `npm test`
+- `npx vitest run tests/integration/slice10-tenant-admin.test.js --maxWorkers=1 --minWorkers=1`
+- `npm --prefix frontend run build`
+
 ---
 
 ## Tenant Admin And Applicant Navigation Consistency Pass

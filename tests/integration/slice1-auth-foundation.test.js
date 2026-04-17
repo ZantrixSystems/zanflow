@@ -354,6 +354,60 @@ describe('slice 1 - auth foundation', () => {
     }
   }, 10000);
 
+  it('saves an applicant draft with phone data even when KMS is not configured', async () => {
+    const tenant = await createTenantFixture({ slug: 'test-apply-save-no-kms' });
+    const applicant = await createApplicantFixture({ tenantId: tenant.id });
+
+    const loginResponse = await fetchWorker('https://example.test/api/applicant/login', {
+      method: 'POST',
+      host: `${tenant.slug}.zanflo.com`,
+      body: {
+        email: applicant.email,
+        password: applicant.password,
+      },
+    });
+
+    const sessionCookie = getCookie(loginResponse, 'applicant_session');
+
+    const typesResponse = await fetchWorker('https://example.test/api/application-types', {
+      method: 'GET',
+      host: `${tenant.slug}.zanflo.com`,
+    });
+    const typesJson = await readJson(typesResponse);
+
+    const createResponse = await fetchWorker('https://example.test/api/applications', {
+      method: 'POST',
+      host: `${tenant.slug}.zanflo.com`,
+      cookie: sessionCookie,
+      body: {
+        application_type_id: typesJson.application_types[0].id,
+      },
+    });
+
+    expect(createResponse.status).toBe(201);
+    const application = await readJson(createResponse);
+
+    const updateResponse = await fetchWorker(`https://example.test/api/applications/${application.id}`, {
+      method: 'PUT',
+      host: `${tenant.slug}.zanflo.com`,
+      cookie: sessionCookie,
+      body: {
+        applicant_phone: '07700 900123',
+        premises_name: 'Test Premises',
+      },
+      envOverrides: {
+        GOOGLE_KMS_KEY_NAME: '',
+        GOOGLE_SERVICE_ACCOUNT_EMAIL: '',
+        GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: '',
+      },
+    });
+
+    expect(updateResponse.status).toBe(200);
+    const updated = await readJson(updateResponse);
+    expect(updated.applicant_phone).toBe('07700 900123');
+    expect(updated.premises_name).toBe('Test Premises');
+  });
+
   it('blocks cross-tenant applicant access', async () => {
     const tenantA = await createTenantFixture({ slug: 'test-alpha' });
     const tenantB = await createTenantFixture({ slug: 'test-beta' });

@@ -19,6 +19,14 @@ function getRequiredEnv(env, key) {
   return value;
 }
 
+export function isGoogleKmsConfigured(env) {
+  return Boolean(
+    env.GOOGLE_KMS_KEY_NAME &&
+    env.GOOGLE_SERVICE_ACCOUNT_EMAIL &&
+    env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
+  );
+}
+
 function toBase64(bytes) {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);

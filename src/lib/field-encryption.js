@@ -6,7 +6,7 @@
  * a clean seam to replace later with envelope encryption.
  */
 
-import { decryptWithGoogleKms, encryptWithGoogleKms } from './google-kms.js';
+import { decryptWithGoogleKms, encryptWithGoogleKms, isGoogleKmsConfigured } from './google-kms.js';
 
 export const APPLICATION_PHONE_ENCRYPTION_SCHEME = 'gcp_kms_direct_v1';
 
@@ -23,6 +23,15 @@ export async function encryptApplicationApplicantPhone(phone, context, env) {
   if (!normalisedPhone) {
     return {
       ciphertext: null,
+      kmsKeyName: null,
+      kmsKeyVersion: null,
+      encryptionScheme: null,
+    };
+  }
+
+  if (!isGoogleKmsConfigured(env)) {
+    return {
+      ciphertext: normalisedPhone,
       kmsKeyName: null,
       kmsKeyVersion: null,
       encryptionScheme: null,
