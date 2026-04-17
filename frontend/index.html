@@ -1,12 +1,104 @@
-1<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ZanFlo</title>
+    <style>
+      #tenant-shell-fallback {
+        display: none;
+        min-height: 100vh;
+        padding: 24px;
+        background:
+          radial-gradient(circle at top left, rgba(125, 78, 16, 0.10), transparent 30%),
+          linear-gradient(180deg, #f8f5ef 0%, #f5f1e8 100%);
+        color: #1f2328;
+        font: 16px/1.5 Georgia, "Times New Roman", serif;
+      }
+
+      #tenant-shell-fallback.is-visible {
+        display: grid;
+        place-items: center;
+      }
+
+      .tenant-shell-panel {
+        width: min(680px, 100%);
+        background: #fffaf2;
+        border: 1px solid #d8c8ab;
+        border-radius: 18px;
+        padding: 32px;
+        box-shadow: 0 18px 60px rgba(67, 48, 17, 0.10);
+      }
+
+      .tenant-shell-eyebrow {
+        margin: 0 0 8px;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #7d4e10;
+      }
+
+      .tenant-shell-panel h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2rem, 4vw, 3rem);
+        line-height: 1.1;
+      }
+
+      .tenant-shell-panel p {
+        margin: 0 0 14px;
+        color: #615c55;
+      }
+
+      .tenant-shell-link {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 12px 18px;
+        border-radius: 999px;
+        background: #7d4e10;
+        color: #fffaf2;
+        text-decoration: none;
+        font-weight: 700;
+      }
+    </style>
+    <script>
+      (function () {
+        const hostname = window.location.hostname.toLowerCase();
+        const isTenantHost = hostname.endsWith('.zanflo.com')
+          && hostname !== 'zanflo.com'
+          && hostname !== 'www.zanflo.com'
+          && hostname !== 'platform.zanflo.com';
+
+        if (!isTenantHost || window.location.pathname === '/admin/bootstrap') return;
+
+        function showFallback() {
+          const fallback = document.getElementById('tenant-shell-fallback');
+          if (!fallback) return;
+          window.__TENANT_UNAVAILABLE__ = true;
+          fallback.classList.add('is-visible');
+        }
+
+        fetch('/api/tenant/public-config', {
+          credentials: 'same-origin',
+          headers: { Accept: 'application/json' },
+        })
+          .then((response) => {
+            if (!response.ok) showFallback();
+          })
+          .catch(showFallback);
+      }());
+    </script>
   </head>
   <body>
+    <div id="tenant-shell-fallback" aria-live="polite">
+      <main class="tenant-shell-panel">
+        <p class="tenant-shell-eyebrow">Tenant unavailable</p>
+        <h1>Tenant not found</h1>
+        <p>This council site does not exist, has been deleted, or is not currently active.</p>
+        <p>Check the web address and try again. If you expected this council portal to be available, return to the main Zanflo site or contact platform support.</p>
+        <a class="tenant-shell-link" href="https://zanflo.com">Go to zanflo.com</a>
+      </main>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
