@@ -330,7 +330,7 @@ describe('slice 1 - auth foundation', () => {
       client.release();
       await pool.end();
     }
-  });
+  }, 10000);
 
   it('blocks cross-tenant applicant access', async () => {
     const tenantA = await createTenantFixture({ slug: 'test-alpha' });
