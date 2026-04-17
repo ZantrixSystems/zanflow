@@ -166,6 +166,15 @@ Alignment refinement:
 - normalised action button widths so rows line up cleanly even when button labels differ
 - applied that lock-up to both the tenant admin dashboard and the tenant public portal action rows
 
+Council admin guidance panel:
+
+- added a council-only URL guide panel on the tenant admin dashboard
+- this now explains the three practical council URLs in plain English:
+  - public homepage
+  - council admin and staff sign-in
+  - applicant area
+- explicitly kept platform admin out of this guidance so the panel stays tenant-focused
+
 ---
 
 ## Tenant Admin And Applicant Navigation Consistency Pass

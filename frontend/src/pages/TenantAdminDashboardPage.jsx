@@ -34,6 +34,47 @@ export default function TenantAdminDashboardPage() {
         </p>
       </section>
 
+      {session.role === 'tenant_admin' && settings?.tenant?.subdomain && (
+        <section className="form-section">
+          <div className="form-section-title">Council URL guide</div>
+          <p className="page-subtitle" style={{ marginBottom: 24 }}>
+            Use these council-specific links so staff and applicants go to the right place. Platform admin users do not use these links.
+          </p>
+
+          <div className="dashboard-url-list">
+            <article className="dashboard-url-row">
+              <div className="dashboard-url-copy">
+                <h2>Public homepage</h2>
+                <p>This is your council&apos;s main public website for licensing information and first visits.</p>
+              </div>
+              <div className="dashboard-url-meta">
+                <strong>{`${settings.tenant.subdomain}.zanflo.com`}</strong>
+              </div>
+            </article>
+
+            <article className="dashboard-url-row">
+              <div className="dashboard-url-copy">
+                <h2>Council admin and staff sign-in</h2>
+                <p>This is where council staff and tenant admins sign in to manage settings, users, and applications.</p>
+              </div>
+              <div className="dashboard-url-meta">
+                <strong>{`${settings.tenant.subdomain}.zanflo.com/admin`}</strong>
+              </div>
+            </article>
+
+            <article className="dashboard-url-row">
+              <div className="dashboard-url-copy">
+                <h2>Applicant area</h2>
+                <p>This is where premises applicants create an account, start an application, and track progress.</p>
+              </div>
+              <div className="dashboard-url-meta">
+                <strong>{`${settings.tenant.subdomain}.zanflo.com/apply`}</strong>
+              </div>
+            </article>
+          </div>
+        </section>
+      )}
+
       {session.role === 'tenant_admin' && settings && (
         <section className="dashboard-action-list">
           <article className="dashboard-action-row">
