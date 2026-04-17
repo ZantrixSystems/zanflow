@@ -151,6 +151,29 @@ Verification:
 
 - `npm --prefix frontend run build`
 
+---
+
+## Tenant Admin Dashboard Copy Correction
+
+Confidence Level: High
+
+Reason:
+
+- the council URL guide on the tenant admin dashboard implied that `tenant_admin` users manage applications directly
+- that wording conflicted with the current live permission model, where application processing is limited to `manager` and `officer`
+
+What changed:
+
+- updated the tenant dashboard URL guide copy for `<tenant>.zanflo.com/admin`
+- clarified that:
+  - tenant admins use this route for settings, users, and audit
+  - managers and officers use this route for application work
+
+Scope:
+
+- frontend copy only
+- no route, permission, or data model change
+
 Update:
 
 - reused the new stacked action-row pattern beyond the council admin dashboard

@@ -55,7 +55,7 @@ export default function TenantAdminDashboardPage() {
             <article className="dashboard-url-row">
               <div className="dashboard-url-copy">
                 <h2>Council admin and staff sign-in</h2>
-                <p>This is where council staff and tenant admins sign in to manage settings, users, and applications.</p>
+                <p>This is where tenant admins, managers, and officers sign in. Tenant admins manage settings, users, and audit. Managers and officers manage application work.</p>
               </div>
               <div className="dashboard-url-meta">
                 <strong>{`${settings.tenant.subdomain}.zanflo.com/admin`}</strong>
