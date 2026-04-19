@@ -1,8 +1,9 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import AdminLayout from '../components/AdminLayout.jsx';
 import { api } from '../api.js';
 import { useStaffAuth } from '../components/RequireStaffAuth.jsx';
+// Saved filters live in the sidebar (AdminLayout) — not rendered here
 
 // ---------------------------------------------------------------------------
 // Status metadata — application statuses + premises verification states
@@ -92,99 +93,6 @@ function ActiveFilterTags({ assigned, status, caseType, typeSlug, createdDays, t
 }
 
 // ---------------------------------------------------------------------------
-// SavedFilters — lightweight chip bar above the toolbar
-// ---------------------------------------------------------------------------
-function SavedFilters({ currentParams, hasActiveFilters, onApply }) {
-  const [filters, setFilters] = useState([]);
-  const [saving, setSaving] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [showSave, setShowSave] = useState(false);
-
-  useEffect(() => {
-    api.listAdminSavedFilters()
-      .then((d) => setFilters(d.filters ?? []))
-      .catch(() => {});
-  }, []);
-
-  async function handleSave(e) {
-    e.preventDefault();
-    if (!newName.trim()) return;
-    setSaving(true);
-    try {
-      const filterJson = {};
-      for (const [k, v] of currentParams.entries()) {
-        filterJson[k] = v;
-      }
-      const data = await api.createAdminSavedFilter({ name: newName.trim(), filter_json: filterJson });
-      setFilters((prev) => [data.filter, ...prev]);
-      setNewName('');
-      setShowSave(false);
-    } catch {
-      // silent — non-critical
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleDelete(id) {
-    await api.deleteAdminSavedFilter(id).catch(() => {});
-    setFilters((prev) => prev.filter((f) => f.id !== id));
-  }
-
-  // Don't render the bar at all if there are no saved filters and no active
-  // filters to save — keeps the page clean for first-time users.
-  if (filters.length === 0 && !hasActiveFilters && !showSave) return null;
-
-  return (
-    <div className="saved-filters-bar">
-      <span className="saved-filters-label">Saved:</span>
-      {filters.map((f) => (
-        <span key={f.id} className="saved-filter-chip">
-          <button
-            type="button"
-            className="saved-filter-chip-name"
-            onClick={() => onApply(f.filter_json)}
-            title={`Apply: ${f.name}`}
-          >
-            {f.name}
-          </button>
-          <button
-            type="button"
-            className="saved-filter-chip-remove"
-            onClick={() => handleDelete(f.id)}
-            aria-label={`Remove saved filter "${f.name}"`}
-          >
-            ×
-          </button>
-        </span>
-      ))}
-      {showSave ? (
-        <form onSubmit={handleSave} className="saved-filter-save-form">
-          <input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Name this filter…"
-            className="saved-filter-name-input"
-            maxLength={80}
-            autoFocus
-          />
-          <button type="submit" className="btn btn-secondary btn-sm" disabled={saving}>
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-          <button type="button" className="link-btn" onClick={() => setShowSave(false)}>
-            Cancel
-          </button>
-        </form>
-      ) : hasActiveFilters ? (
-        <button type="button" className="link-btn saved-filter-save-trigger" onClick={() => setShowSave(true)}>
-          + Save this filter
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
 export default function AdminCasesPage() {
@@ -255,16 +163,6 @@ export default function AdminCasesPage() {
     setParam(key, '');
   }
 
-  const applyFilterJson = useCallback((filterJson) => {
-    setUrlParams(() => {
-      const next = new URLSearchParams();
-      for (const [k, v] of Object.entries(filterJson)) {
-        if (v) next.set(k, String(v));
-      }
-      return next;
-    });
-  }, [setUrlParams]);
-
   function clearAllFilters() {
     setUrlParams({});
   }
@@ -285,13 +183,6 @@ export default function AdminCasesPage() {
         <h1 className="queue-page-title">{viewTitle}</h1>
         <p className="queue-page-subtitle">{viewSubtitle}</p>
       </div>
-
-      {/* Saved filter chips — only visible when there are saved filters or active filters */}
-      <SavedFilters
-        currentParams={urlParams}
-        hasActiveFilters={hasActiveFilters}
-        onApply={applyFilterJson}
-      />
 
       {/* Filter + sort toolbar */}
       <div className="queue-toolbar">

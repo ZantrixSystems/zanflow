@@ -9,7 +9,6 @@ export function buildTenantAdminNav(session) {
       { to: '/admin/cases', label: 'All cases' },
       { to: '/admin/cases?assigned=mine', label: 'Assigned to me' },
       { to: '/admin/cases?assigned=unassigned', label: 'Unassigned' },
-      { to: '/admin/cases?case_type=premises_verification', label: 'Premises verifications' },
     );
   }
 
