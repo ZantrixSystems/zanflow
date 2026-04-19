@@ -20,7 +20,7 @@ export default function TenantAdminLoginPage() {
   }, []);
 
   function getPostLoginTarget(role) {
-    return role === 'tenant_admin' ? '/admin/settings?setup=1' : '/admin/dashboard';
+    return '/admin/dashboard';
   }
 
   useEffect(() => {
