@@ -19,7 +19,6 @@ import PlatformTenantDetailPage from './pages/PlatformTenantDetailPage.jsx';
 import PlatformTenantAdminIssuePage from './pages/PlatformTenantAdminIssuePage.jsx';
 import TenantAdminLoginPage from './pages/TenantAdminLoginPage.jsx';
 import TenantAdminDashboardPage from './pages/TenantAdminDashboardPage.jsx';
-import AdminApplicationsPage from './pages/AdminApplicationsPage.jsx';
 import AdminCasesPage from './pages/AdminCasesPage.jsx';
 import AdminApplicationDetailPage from './pages/AdminApplicationDetailPage.jsx';
 import AdminUsersPage from './pages/AdminUsersPage.jsx';
@@ -27,10 +26,7 @@ import AdminSettingsPage from './pages/AdminSettingsPage.jsx';
 import AdminAuditPage from './pages/AdminAuditPage.jsx';
 import AdminApplicationSetupPage from './pages/AdminApplicationSetupPage.jsx';
 import AdminApplicationTypesPage from './pages/AdminApplicationTypesPage.jsx';
-import {
-  AdminPremisesVerificationListPage,
-  AdminPremisesVerificationDetailPage,
-} from './pages/AdminPremisesVerificationPage.jsx';
+import { AdminPremisesVerificationDetailPage } from './pages/AdminPremisesVerificationPage.jsx';
 import TenantApplyPage from './pages/TenantApplyPage.jsx';
 import TenantBootstrapExchangePage from './pages/TenantBootstrapExchangePage.jsx';
 import TenantPublicHomePage from './pages/TenantPublicHomePage.jsx';
@@ -278,11 +274,7 @@ export default function App() {
 
       <Route
         path="/admin/applications"
-        element={(
-          <RequireStaffAuth allowedRoles={['officer', 'manager']}>
-            <AdminApplicationsPage />
-          </RequireStaffAuth>
-        )}
+        element={<Navigate to="/admin/cases" replace />}
       />
 
       <Route
@@ -296,11 +288,7 @@ export default function App() {
 
       <Route
         path="/admin/premises-verifications"
-        element={(
-          <RequireStaffAuth allowedRoles={['officer', 'manager', 'tenant_admin']}>
-            <AdminPremisesVerificationListPage />
-          </RequireStaffAuth>
-        )}
+        element={<Navigate to="/admin/cases?case_type=premises_verification" replace />}
       />
 
       <Route
