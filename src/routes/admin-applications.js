@@ -342,9 +342,43 @@ async function recordDecision(request, env, applicationId) {
   return json(await serialiseApplicationForResponse(rows[0], env));
 }
 
+async function getQueueStats(request, env) {
+  const session = await requireTenantStaff(request, env, 'officer', 'manager');
+  if (!session) return error('Not authorised', 403);
+
+  const sql = getDb(env);
+  const rows = await sql`
+    SELECT
+      COUNT(*) FILTER (WHERE status <> 'draft')                          AS total,
+      COUNT(*) FILTER (WHERE status = 'submitted')                       AS submitted,
+      COUNT(*) FILTER (WHERE assigned_user_id = ${session.user_id}
+                         AND status <> 'draft')                          AS assigned_to_me,
+      COUNT(*) FILTER (WHERE assigned_user_id IS NULL
+                         AND status <> 'draft')                          AS unassigned,
+      COUNT(*) FILTER (WHERE status = 'awaiting_information')            AS awaiting_information
+    FROM applications
+    WHERE tenant_id = ${session.tenant_id}
+  `;
+
+  const s = rows[0] ?? {};
+  return json({
+    stats: {
+      total:                Number(s.total ?? 0),
+      submitted:            Number(s.submitted ?? 0),
+      assigned_to_me:       Number(s.assigned_to_me ?? 0),
+      unassigned:           Number(s.unassigned ?? 0),
+      awaiting_information: Number(s.awaiting_information ?? 0),
+    },
+  });
+}
+
 export async function handleAdminApplicationRoutes(request, env) {
   const url = new URL(request.url);
   const { method } = request;
+
+  if (method === 'GET' && url.pathname === '/api/admin/queue-stats') {
+    return getQueueStats(request, env);
+  }
 
   if (method === 'GET' && url.pathname === '/api/admin/applications') {
     return listApplications(request, env);

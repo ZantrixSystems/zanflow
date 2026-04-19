@@ -104,6 +104,7 @@ export const api = {
   updateAdminUser: (id, body) => request('PUT', `/api/admin/users/${id}`, body),
   getAdminSettings: () => request('GET', '/api/admin/settings'),
   getAdminOnboarding: () => request('GET', '/api/admin/onboarding'),
+  getAdminQueueStats: () => request('GET', '/api/admin/queue-stats'),
   updateAdminSettings: (body) => request('PUT', '/api/admin/settings', body),
   getAdminApplicationSetup: () => request('GET', '/api/admin/application-setup'),
   updateAdminApplicationSetup: (body) => request('PUT', '/api/admin/application-setup', body),
