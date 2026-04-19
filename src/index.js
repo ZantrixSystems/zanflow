@@ -24,6 +24,7 @@ import { handleApplicantAuthRoutes }   from './routes/applicant-auth.js';
 import { handleApplicationTypeRoutes } from './routes/application-types.js';
 import { handleApplicationRoutes }     from './routes/applications.js';
 import { handleAdminApplicationRoutes } from './routes/admin-applications.js';
+import { handleAdminCaseRoutes } from './routes/admin-cases.js';
 import { handleAdminApplicationSetupRoutes } from './routes/admin-application-setup.js';
 import { handleAdminApplicationTypeRoutes } from './routes/admin-application-types.js';
 import { handleAdminPremisesVerificationRoutes } from './routes/admin-premises-verifications.js';
@@ -294,6 +295,7 @@ export default {
         (await handleTenantPublicRoutes(request, env))    ??
         (await handlePremisesRoutes(request, env))        ??
         (await handleApplicationRoutes(request, env))     ??
+        (await handleAdminCaseRoutes(request, env))         ??
         (await handleAdminApplicationRoutes(request, env)) ??
         (await handleAdminApplicationSetupRoutes(request, env)) ??
         (await handleAdminApplicationTypeRoutes(request, env)) ??

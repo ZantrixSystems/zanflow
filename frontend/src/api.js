@@ -88,6 +88,23 @@ export const api = {
   submitApplication: (id) => request('POST', `/api/applications/${id}/submit`),
   deleteApplication: (id) => request('DELETE', `/api/applications/${id}`),
 
+  listAdminCases: (params = {}) => {
+    const search = new URLSearchParams();
+    if (params.status)      search.set('status', params.status);
+    if (params.assigned)    search.set('assigned', params.assigned);
+    if (params.case_type)   search.set('case_type', params.case_type);
+    if (params.type)        search.set('type', params.type);
+    if (params.created_days) search.set('created_days', params.created_days);
+    if (params.sort)        search.set('sort', params.sort);
+    const suffix = search.toString() ? `?${search.toString()}` : '';
+    return request('GET', `/api/admin/cases${suffix}`);
+  },
+  getAdminCaseStats: () => request('GET', '/api/admin/cases/stats'),
+  listAdminSavedFilters: () => request('GET', '/api/admin/saved-filters'),
+  createAdminSavedFilter: (body) => request('POST', '/api/admin/saved-filters', body),
+  updateAdminSavedFilter: (id, body) => request('PUT', `/api/admin/saved-filters/${id}`, body),
+  deleteAdminSavedFilter: (id) => request('DELETE', `/api/admin/saved-filters/${id}`),
+
   listAdminApplications: (params = {}) => {
     const search = new URLSearchParams();
     if (params.status) search.set('status', params.status);

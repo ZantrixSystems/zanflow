@@ -20,6 +20,7 @@ import PlatformTenantAdminIssuePage from './pages/PlatformTenantAdminIssuePage.j
 import TenantAdminLoginPage from './pages/TenantAdminLoginPage.jsx';
 import TenantAdminDashboardPage from './pages/TenantAdminDashboardPage.jsx';
 import AdminApplicationsPage from './pages/AdminApplicationsPage.jsx';
+import AdminCasesPage from './pages/AdminCasesPage.jsx';
 import AdminApplicationDetailPage from './pages/AdminApplicationDetailPage.jsx';
 import AdminUsersPage from './pages/AdminUsersPage.jsx';
 import AdminSettingsPage from './pages/AdminSettingsPage.jsx';
@@ -262,6 +263,15 @@ export default function App() {
         element={(
           <RequireStaffAuth>
             <TenantAdminDashboardPage />
+          </RequireStaffAuth>
+        )}
+      />
+
+      <Route
+        path="/admin/cases"
+        element={(
+          <RequireStaffAuth allowedRoles={['officer', 'manager', 'tenant_admin']}>
+            <AdminCasesPage />
           </RequireStaffAuth>
         )}
       />

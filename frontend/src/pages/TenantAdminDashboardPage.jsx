@@ -38,12 +38,6 @@ function StatusBadge({ status }) {
   return <span className={`status-badge ${meta.cls}`}>{meta.label}</span>;
 }
 
-function formatRefId(tenantSlug, refNumber) {
-  if (!refNumber) return '—';
-  const prefix = (tenantSlug || 'APP').slice(0, 4).toUpperCase();
-  return `${prefix}-${String(refNumber).padStart(6, '0')}`;
-}
-
 function formatShortDate(value) {
   if (!value) return '—';
   return new Date(value).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
@@ -55,34 +49,35 @@ function OfficerDashboard({ session }) {
   const [casesLoading, setCasesLoading] = useState(true);
 
   useEffect(() => {
-    api.getAdminQueueStats().then(setStats).catch(() => {});
-    api.listAdminApplications({ assigned: 'mine', sort: 'updated' })
-      .then((data) => setCases((data.applications ?? []).slice(0, 8)))
+    api.getAdminCaseStats().then(setStats).catch(() => {});
+    api.listAdminCases({ assigned: 'mine', sort: 'updated' })
+      .then((data) => setCases((data.cases ?? []).slice(0, 8)))
       .catch(() => {})
       .finally(() => setCasesLoading(false));
   }, []);
 
-  const s = stats?.stats;
+  const a = stats?.stats?.applications;
+  const pv = stats?.stats?.premises_verifications;
 
   return (
     <>
       <section className="officer-dashboard">
         <div className="officer-stat-grid">
-          <Link to="/admin/applications?assigned=mine" className="officer-stat-card officer-stat-mine">
-            <div className="officer-stat-number">{s?.assigned_to_me ?? '—'}</div>
+          <Link to="/admin/cases?assigned=mine" className="officer-stat-card officer-stat-mine">
+            <div className="officer-stat-number">{a?.assigned_to_me ?? '—'}</div>
             <div className="officer-stat-label">Assigned to you</div>
           </Link>
-          <Link to="/admin/applications?assigned=unassigned" className="officer-stat-card officer-stat-unassigned">
-            <div className="officer-stat-number">{s?.unassigned ?? '—'}</div>
+          <Link to="/admin/cases?assigned=unassigned" className="officer-stat-card officer-stat-unassigned">
+            <div className="officer-stat-number">{a?.unassigned ?? '—'}</div>
             <div className="officer-stat-label">Unassigned</div>
           </Link>
-          <Link to="/admin/applications?status=submitted" className="officer-stat-card officer-stat-submitted">
-            <div className="officer-stat-number">{s?.submitted ?? '—'}</div>
+          <Link to="/admin/cases?status=submitted" className="officer-stat-card officer-stat-submitted">
+            <div className="officer-stat-number">{a?.submitted ?? '—'}</div>
             <div className="officer-stat-label">Awaiting review</div>
           </Link>
-          <Link to="/admin/applications?status=awaiting_information" className="officer-stat-card officer-stat-waiting">
-            <div className="officer-stat-number">{s?.awaiting_information ?? '—'}</div>
-            <div className="officer-stat-label">Awaiting info</div>
+          <Link to="/admin/cases?case_type=premises_verification&status=pending_verification" className="officer-stat-card officer-stat-waiting">
+            <div className="officer-stat-number">{pv?.pending ?? '—'}</div>
+            <div className="officer-stat-label">Premises pending</div>
           </Link>
         </div>
       </section>
@@ -90,7 +85,7 @@ function OfficerDashboard({ session }) {
       <section className="form-section">
         <div className="form-section-title">
           <span>Assigned to you</span>
-          <Link to="/admin/applications?assigned=mine" className="form-section-title-link">View all</Link>
+          <Link to="/admin/cases?assigned=mine" className="form-section-title-link">View all</Link>
         </div>
 
         {casesLoading ? (
@@ -99,7 +94,7 @@ function OfficerDashboard({ session }) {
           <div className="queue-empty">
             <div className="queue-empty-title">No cases assigned to you</div>
             <p className="queue-empty-hint">
-              <Link to="/admin/applications?assigned=unassigned">Pick up an unassigned case</Link>
+              <Link to="/admin/cases?assigned=unassigned">Pick up an unassigned case</Link>
             </p>
           </div>
         ) : (
@@ -115,36 +110,44 @@ function OfficerDashboard({ session }) {
                 </tr>
               </thead>
               <tbody>
-                {cases.map((app) => (
-                  <tr
-                    key={app.id}
-                    className="queue-table-row"
-                    onClick={() => { window.location.href = `/admin/applications/${app.id}`; }}
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter') window.location.href = `/admin/applications/${app.id}`; }}
-                    role="link"
-                    aria-label={`Application ${formatRefId(app.tenant_slug, app.ref_number)}`}
-                  >
-                    <td className="queue-col-ref">
-                      <Link
-                        to={`/admin/applications/${app.id}`}
-                        className="queue-ref-link"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {formatRefId(app.tenant_slug, app.ref_number)}
-                      </Link>
-                    </td>
-                    <td className="queue-col-type">{app.application_type_name ?? '—'}</td>
-                    <td className="queue-col-premises">
-                      <div className="queue-premises-name">{app.premises_name || '—'}</div>
-                      {app.premises_postcode && (
-                        <div className="queue-premises-postcode">{app.premises_postcode}</div>
-                      )}
-                    </td>
-                    <td className="queue-col-status"><StatusBadge status={app.status} /></td>
-                    <td className="queue-col-date">{formatShortDate(app.updated_at)}</td>
-                  </tr>
-                ))}
+                {cases.map((row) => {
+                  const path = row.case_type === 'premises_verification'
+                    ? `/admin/premises-verifications/${row.case_id}`
+                    : `/admin/applications/${row.case_id}`;
+                  const ref = row.case_type === 'premises_verification'
+                    ? (row.pv_ref || 'PV—')
+                    : (() => {
+                        if (!row.ref_number) return '—';
+                        const prefix = (row.tenant_slug || 'APP').slice(0, 4).toUpperCase();
+                        return `${prefix}-${String(row.ref_number).padStart(6, '0')}`;
+                      })();
+                  return (
+                    <tr
+                      key={`${row.case_type}-${row.case_id}`}
+                      className="queue-table-row"
+                      onClick={() => { window.location.href = path; }}
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter') window.location.href = path; }}
+                      role="link"
+                      aria-label={`${row.type_name}: ${ref}`}
+                    >
+                      <td className="queue-col-ref">
+                        <Link to={path} className="queue-ref-link" onClick={(e) => e.stopPropagation()}>
+                          {ref}
+                        </Link>
+                      </td>
+                      <td className="queue-col-type">{row.type_name ?? '—'}</td>
+                      <td className="queue-col-premises">
+                        <div className="queue-premises-name">{row.premises_name || '—'}</div>
+                        {row.premises_postcode && (
+                          <div className="queue-premises-postcode">{row.premises_postcode}</div>
+                        )}
+                      </td>
+                      <td className="queue-col-status"><StatusBadge status={row.case_status} /></td>
+                      <td className="queue-col-date">{formatShortDate(row.case_updated_at)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

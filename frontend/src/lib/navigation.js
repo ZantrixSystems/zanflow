@@ -6,10 +6,10 @@ export function buildTenantAdminNav(session) {
   if (session && ['officer', 'manager', 'tenant_admin'].includes(session.role)) {
     items.push(
       { type: 'section', label: 'Work queue' },
-      { to: '/admin/applications', label: 'All cases' },
-      { to: '/admin/applications?assigned=mine', label: 'Assigned to me' },
-      { to: '/admin/applications?assigned=unassigned', label: 'Unassigned' },
-      { to: '/admin/premises-verifications', label: 'Premises verifications' },
+      { to: '/admin/cases', label: 'All cases' },
+      { to: '/admin/cases?assigned=mine', label: 'Assigned to me' },
+      { to: '/admin/cases?assigned=unassigned', label: 'Unassigned' },
+      { to: '/admin/cases?case_type=premises_verification', label: 'Premises verifications' },
     );
   }
 

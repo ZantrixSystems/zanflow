@@ -2305,6 +2305,87 @@ body { min-height: 100vh; }
   color: var(--color-text-muted);
 }
 
+.queue-clear-btn {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* Case type pill — differentiates case types in the unified queue */
+.case-type-pill {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-surface-high);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.case-type-pill[data-type="premises_verification"] {
+  background: rgba(115, 92, 0, 0.10);
+  color: var(--color-primary);
+}
+
+/* Saved filters bar */
+.saved-filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 12px;
+  min-height: 36px;
+}
+
+.saved-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--color-surface-high);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 3px 6px 3px 10px;
+  font-size: 0.8rem;
+}
+
+.saved-filter-chip-name {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+.saved-filter-chip-name:hover { text-decoration: underline; }
+
+.saved-filter-chip-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  padding: 0 2px;
+}
+.saved-filter-chip-remove:hover { color: var(--color-danger); }
+
+.saved-filter-save-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.saved-filter-name-input {
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  width: 160px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
 /* Queue table */
 
 .queue-table-wrap {
