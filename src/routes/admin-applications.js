@@ -74,6 +74,8 @@ async function listApplications(request, env) {
   const url = new URL(request.url);
   const status = url.searchParams.get('status');
   const assigned = url.searchParams.get('assigned');
+  const typeSlug = url.searchParams.get('type');
+  const sortParam = url.searchParams.get('sort') || 'updated';
   const sql = getDb(env);
 
   const filters = [`a.tenant_id = $1`, `a.status <> 'draft'`];
@@ -91,9 +93,23 @@ async function listApplications(request, env) {
     filters.push(`a.assigned_user_id IS NULL`);
   }
 
+  if (typeSlug) {
+    params.push(typeSlug);
+    filters.push(`at.slug = $${params.length}`);
+  }
+
+  const SORT_COLS = {
+    updated:  'a.updated_at DESC',
+    created:  'a.created_at DESC',
+    type:     'at.name ASC, a.updated_at DESC',
+    status:   'a.status ASC, a.updated_at DESC',
+  };
+  const orderBy = SORT_COLS[sortParam] ?? SORT_COLS.updated;
+
   const rows = await sql(`
     SELECT
       a.id,
+      a.ref_number,
       a.status,
       a.premises_id,
       a.premises_name,
@@ -110,15 +126,15 @@ async function listApplications(request, env) {
       at.slug AS application_type_slug,
       assigned_user.id AS assigned_user_id,
       assigned_user.full_name AS assigned_user_name,
-      assigned_user.email AS assigned_user_email
+      assigned_user.email AS assigned_user_email,
+      t.slug AS tenant_slug
     FROM applications a
     LEFT JOIN applicant_accounts aa ON aa.id = a.applicant_account_id
     LEFT JOIN application_types at ON at.id = a.application_type_id
     LEFT JOIN users assigned_user ON assigned_user.id = a.assigned_user_id
+    INNER JOIN tenants t ON t.id = a.tenant_id
     WHERE ${filters.join(' AND ')}
-    ORDER BY
-      CASE WHEN a.status = 'submitted' THEN 0 ELSE 1 END,
-      a.updated_at DESC
+    ORDER BY ${orderBy}
   `, params);
 
   return json({ applications: rows });

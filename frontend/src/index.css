@@ -1711,7 +1711,15 @@ body { min-height: 100vh; }
   box-shadow: var(--shadow-sm);
 }
 
-.queue-status-filter {
+.queue-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.queue-filter-select {
   font-family: var(--font-sans);
   font-size: 0.8125rem;
   padding: 7px 12px;
@@ -1833,6 +1841,104 @@ body { min-height: 100vh; }
 
 .queue-empty-hint {
   font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+/* Queue table */
+
+.queue-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.queue-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8375rem;
+}
+
+.queue-table thead th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  background: var(--color-surface-low);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.queue-table-row {
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.queue-table-row:hover {
+  background: var(--color-surface-low);
+}
+
+.queue-table-row:focus {
+  outline: 2px solid var(--color-primary-container);
+  outline-offset: -2px;
+}
+
+.queue-table tbody tr + tr {
+  border-top: 1px solid var(--color-border);
+}
+
+.queue-table td {
+  padding: 10px 14px;
+  vertical-align: middle;
+  color: var(--color-text);
+}
+
+.queue-col-ref {
+  white-space: nowrap;
+}
+
+.queue-ref-link {
+  font-family: monospace;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.queue-ref-link:hover {
+  text-decoration: underline;
+}
+
+.queue-col-type {
+  white-space: nowrap;
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+
+.queue-col-premises .queue-premises-name {
+  font-weight: 500;
+}
+
+.queue-col-premises .queue-premises-postcode {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.queue-col-status {
+  white-space: nowrap;
+}
+
+.queue-col-assigned {
+  white-space: nowrap;
+  font-size: 0.8125rem;
+}
+
+.queue-col-date {
+  white-space: nowrap;
+  font-size: 0.8125rem;
   color: var(--color-text-muted);
 }
 

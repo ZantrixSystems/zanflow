@@ -92,6 +92,8 @@ export const api = {
     const search = new URLSearchParams();
     if (params.status) search.set('status', params.status);
     if (params.assigned) search.set('assigned', params.assigned);
+    if (params.type) search.set('type', params.type);
+    if (params.sort) search.set('sort', params.sort);
     const suffix = search.toString() ? `?${search.toString()}` : '';
     return request('GET', `/api/admin/applications${suffix}`);
   },
