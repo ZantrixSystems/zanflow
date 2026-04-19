@@ -167,6 +167,7 @@ async function bootstrapExchange(request, env) {
   });
 
   return json({
+    tenant_name: tenant.name,
     session: {
       user_id: bootstrap.user_id,
       email: bootstrap.email,
