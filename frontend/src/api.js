@@ -66,6 +66,20 @@ export const api = {
   createPremises: (body) => request('POST', '/api/premises', body),
   updatePremises: (id, body) => request('PUT', `/api/premises/${id}`, body),
   deletePremises: (id) => request('DELETE', `/api/premises/${id}`),
+  submitPremisesVerification: (id, body = {}) => request('POST', `/api/premises/${id}/submit-verification`, body),
+
+  listAdminPremisesVerifications: (params = {}) => {
+    const search = new URLSearchParams();
+    if (params.state) search.set('state', params.state);
+    const suffix = search.toString() ? `?${search.toString()}` : '';
+    return request('GET', `/api/admin/premises-verifications${suffix}`);
+  },
+  getAdminPremisesVerification: (id) => request('GET', `/api/admin/premises-verifications/${id}`),
+  decideAdminPremisesVerification: (id, body) => request('POST', `/api/admin/premises-verifications/${id}/decision`, body),
+
+  listAdminApplicationTypes: () => request('GET', '/api/admin/application-types'),
+  publishAdminApplicationType: (applicationTypeId, body = {}) => request('POST', `/api/admin/application-types/${applicationTypeId}/publish`, body),
+  retireAdminApplicationTypeVersion: (versionId) => request('POST', `/api/admin/application-types/${versionId}/retire`),
 
   createApplication: (body) => request('POST', '/api/applications', body),
   listApplications: () => request('GET', '/api/applications'),

@@ -476,6 +476,12 @@ body { min-height: 100vh; }
   color: var(--color-success);
 }
 
+.alert-info {
+  background: rgba(212,175,55,0.10);
+  border: 1px solid rgba(212,175,55,0.30);
+  color: var(--color-on-primary-container);
+}
+
 .alert-warning {
   background: var(--color-warning-bg);
   border: 1px solid var(--color-warning-border);
@@ -681,6 +687,13 @@ body { min-height: 100vh; }
 .status-awaiting_information { background: #fff7ed;                   color: #9a3412; }
 .status-approved           { background: var(--color-success-bg);     color: var(--color-success); }
 .status-refused            { background: var(--color-danger-bg);      color: var(--color-danger); }
+
+/* Premises verification state tags */
+.status-verification-unverified              { background: var(--color-surface-high);  color: var(--color-tag-draft); }
+.status-verification-pending-verification    { background: rgba(212,175,55,0.15);       color: var(--color-on-primary-container); }
+.status-verification-verified                { background: var(--color-success-bg);     color: var(--color-success); }
+.status-verification-verification-refused    { background: var(--color-danger-bg);      color: var(--color-danger); }
+.status-verification-more-information-required { background: #fff7ed;                   color: #9a3412; }
 
 /* ============================================================
    Application form page

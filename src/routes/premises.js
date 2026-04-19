@@ -73,6 +73,9 @@ async function syncEditableApplicationsForPremises(sql, session, premises) {
   return rows.map((row) => row.id);
 }
 
+// ---------------------------------------------------------------------------
+// GET /api/premises
+// ---------------------------------------------------------------------------
 async function listPremises(request, env) {
   const session = await requireApplicant(request, env);
   if (!session) return error('Not authenticated', 401);
@@ -95,6 +98,9 @@ async function listPremises(request, env) {
   return json({ premises: rows.map(serialisePremises) });
 }
 
+// ---------------------------------------------------------------------------
+// POST /api/premises
+// ---------------------------------------------------------------------------
 async function createPremises(request, env) {
   const session = await requireApplicant(request, env);
   if (!session) return error('Not authenticated', 401);
@@ -120,7 +126,8 @@ async function createPremises(request, env) {
       address_line_2,
       town_or_city,
       postcode,
-      premises_description
+      premises_description,
+      verification_state
     )
     VALUES (
       ${session.tenant_id},
@@ -130,7 +137,8 @@ async function createPremises(request, env) {
       ${premises.address_line_2},
       ${premises.town_or_city},
       ${premises.postcode},
-      ${premises.premises_description}
+      ${premises.premises_description},
+      'unverified'
     )
     RETURNING *
   `;
@@ -153,6 +161,9 @@ async function createPremises(request, env) {
   return json(serialisePremises(created), 201);
 }
 
+// ---------------------------------------------------------------------------
+// GET /api/premises/:id
+// ---------------------------------------------------------------------------
 async function getPremises(request, env, premisesId) {
   const session = await requireApplicant(request, env);
   if (!session) return error('Not authenticated', 401);
@@ -161,20 +172,34 @@ async function getPremises(request, env, premisesId) {
   const premises = await getOwnedPremises(sql, session.tenant_id, session.applicant_account_id, premisesId);
   if (!premises) return error('Not found', 404);
 
-  const applicationCountRows = await sql`
-    SELECT COUNT(*)::int AS application_count
-    FROM applications
-    WHERE tenant_id = ${session.tenant_id}
-      AND applicant_account_id = ${session.applicant_account_id}
-      AND premises_id = ${premisesId}
-  `;
+  const [applicationCountRows, verificationEvents] = await Promise.all([
+    sql`
+      SELECT COUNT(*)::int AS application_count
+      FROM applications
+      WHERE tenant_id = ${session.tenant_id}
+        AND applicant_account_id = ${session.applicant_account_id}
+        AND premises_id = ${premisesId}
+    `,
+    sql`
+      SELECT event_type, notes, created_at
+      FROM premises_verification_events
+      WHERE tenant_id = ${session.tenant_id}
+        AND premises_id = ${premisesId}
+      ORDER BY created_at DESC
+      LIMIT 10
+    `,
+  ]);
 
   return json({
     ...serialisePremises(premises),
     application_count: applicationCountRows[0]?.application_count ?? 0,
+    verification_events: verificationEvents,
   });
 }
 
+// ---------------------------------------------------------------------------
+// PUT /api/premises/:id
+// ---------------------------------------------------------------------------
 async function updatePremises(request, env, premisesId) {
   const session = await requireApplicant(request, env);
   if (!session) return error('Not authenticated', 401);
@@ -194,6 +219,12 @@ async function updatePremises(request, env, premisesId) {
   const existing = await getOwnedPremises(sql, session.tenant_id, session.applicant_account_id, premisesId);
   if (!existing) return error('Not found', 404);
 
+  // Editing a premises while it is pending_verification resets it to unverified.
+  // The applicant must resubmit. This prevents bait-and-switch after submission.
+  const nextVerificationState = existing.verification_state === 'pending_verification'
+    ? 'unverified'
+    : existing.verification_state;
+
   const rows = await sql`
     UPDATE premises
     SET
@@ -203,6 +234,7 @@ async function updatePremises(request, env, premisesId) {
       town_or_city = ${premises.town_or_city},
       postcode = ${premises.postcode},
       premises_description = ${premises.premises_description},
+      verification_state = ${nextVerificationState},
       updated_at = NOW()
     WHERE id = ${premisesId}
       AND tenant_id = ${session.tenant_id}
@@ -223,6 +255,7 @@ async function updatePremises(request, env, premisesId) {
     meta: {
       premises_name: updated.premises_name,
       postcode: updated.postcode,
+      verification_state_reset: existing.verification_state === 'pending_verification',
       synced_application_ids: syncedApplicationIds,
     },
   });
@@ -230,6 +263,9 @@ async function updatePremises(request, env, premisesId) {
   return json(serialisePremises(updated));
 }
 
+// ---------------------------------------------------------------------------
+// DELETE /api/premises/:id
+// ---------------------------------------------------------------------------
 async function deletePremises(request, env, premisesId) {
   const session = await requireApplicant(request, env);
   if (!session) return error('Not authenticated', 401);
@@ -273,6 +309,82 @@ async function deletePremises(request, env, premisesId) {
   return json({ deleted: true });
 }
 
+// ---------------------------------------------------------------------------
+// POST /api/premises/:id/submit-verification
+// Applicant submits their premises for officer verification.
+// Allowed states: unverified, more_information_required.
+// ---------------------------------------------------------------------------
+async function submitVerification(request, env, premisesId) {
+  const session = await requireApplicant(request, env);
+  if (!session) return error('Not authenticated', 401);
+
+  const sql = getDb(env);
+  const premises = await getOwnedPremises(sql, session.tenant_id, session.applicant_account_id, premisesId);
+  if (!premises) return error('Not found', 404);
+
+  const allowedStates = ['unverified', 'more_information_required'];
+  if (!allowedStates.includes(premises.verification_state)) {
+    return error(
+      `Premises cannot be submitted for verification from state: ${premises.verification_state}`,
+      409,
+    );
+  }
+
+  let body = {};
+  try {
+    body = await request.json();
+  } catch {
+    // notes are optional; ignore parse error
+  }
+  const notes = body.notes?.trim() ?? null;
+
+  await sql`
+    UPDATE premises
+    SET
+      verification_state = 'pending_verification',
+      updated_at = NOW()
+    WHERE id = ${premisesId}
+      AND tenant_id = ${session.tenant_id}
+      AND applicant_account_id = ${session.applicant_account_id}
+  `;
+
+  await sql`
+    INSERT INTO premises_verification_events (
+      tenant_id,
+      premises_id,
+      actor_type,
+      actor_id,
+      event_type,
+      notes
+    ) VALUES (
+      ${session.tenant_id},
+      ${premisesId},
+      'applicant',
+      ${session.applicant_account_id},
+      ${premises.verification_state === 'more_information_required'
+        ? 'information_provided'
+        : 'verification_submitted'},
+      ${notes}
+    )
+  `;
+
+  await writeAuditLog(sql, {
+    tenantId: session.tenant_id,
+    actorType: 'applicant',
+    actorId: session.applicant_account_id,
+    action: 'premises.verification_submitted',
+    recordType: 'premises',
+    recordId: premisesId,
+    meta: { previous_state: premises.verification_state },
+  });
+
+  const updated = await getOwnedPremises(sql, session.tenant_id, session.applicant_account_id, premisesId);
+  return json(serialisePremises(updated));
+}
+
+// ---------------------------------------------------------------------------
+// Router
+// ---------------------------------------------------------------------------
 export async function handlePremisesRoutes(request, env) {
   const url = new URL(request.url);
   const { method } = request;
@@ -283,6 +395,11 @@ export async function handlePremisesRoutes(request, env) {
 
   if (method === 'POST' && url.pathname === '/api/premises') {
     return createPremises(request, env);
+  }
+
+  const submitVerificationMatch = url.pathname.match(/^\/api\/premises\/([^/]+)\/submit-verification$/);
+  if (submitVerificationMatch && method === 'POST') {
+    return submitVerification(request, env, submitVerificationMatch[1]);
   }
 
   const detailMatch = url.pathname.match(/^\/api\/premises\/([^/]+)$/);

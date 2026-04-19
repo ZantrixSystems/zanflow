@@ -25,6 +25,11 @@ import AdminUsersPage from './pages/AdminUsersPage.jsx';
 import AdminSettingsPage from './pages/AdminSettingsPage.jsx';
 import AdminAuditPage from './pages/AdminAuditPage.jsx';
 import AdminApplicationSetupPage from './pages/AdminApplicationSetupPage.jsx';
+import AdminApplicationTypesPage from './pages/AdminApplicationTypesPage.jsx';
+import {
+  AdminPremisesVerificationListPage,
+  AdminPremisesVerificationDetailPage,
+} from './pages/AdminPremisesVerificationPage.jsx';
 import TenantApplyPage from './pages/TenantApplyPage.jsx';
 import TenantBootstrapExchangePage from './pages/TenantBootstrapExchangePage.jsx';
 import TenantPublicHomePage from './pages/TenantPublicHomePage.jsx';
@@ -275,6 +280,33 @@ export default function App() {
         element={(
           <RequireStaffAuth allowedRoles={['officer', 'manager']}>
             <AdminApplicationDetailPage />
+          </RequireStaffAuth>
+        )}
+      />
+
+      <Route
+        path="/admin/premises-verifications"
+        element={(
+          <RequireStaffAuth allowedRoles={['officer', 'manager', 'tenant_admin']}>
+            <AdminPremisesVerificationListPage />
+          </RequireStaffAuth>
+        )}
+      />
+
+      <Route
+        path="/admin/premises-verifications/:id"
+        element={(
+          <RequireStaffAuth allowedRoles={['officer', 'manager', 'tenant_admin']}>
+            <AdminPremisesVerificationDetailPage />
+          </RequireStaffAuth>
+        )}
+      />
+
+      <Route
+        path="/admin/application-types"
+        element={(
+          <RequireStaffAuth allowedRoles={['tenant_admin']}>
+            <AdminApplicationTypesPage />
           </RequireStaffAuth>
         )}
       />

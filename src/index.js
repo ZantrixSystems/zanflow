@@ -25,6 +25,8 @@ import { handleApplicationTypeRoutes } from './routes/application-types.js';
 import { handleApplicationRoutes }     from './routes/applications.js';
 import { handleAdminApplicationRoutes } from './routes/admin-applications.js';
 import { handleAdminApplicationSetupRoutes } from './routes/admin-application-setup.js';
+import { handleAdminApplicationTypeRoutes } from './routes/admin-application-types.js';
+import { handleAdminPremisesVerificationRoutes } from './routes/admin-premises-verifications.js';
 import { handleAdminAuditRoutes }      from './routes/admin-audit.js';
 import { handleAdminSettingsRoutes }   from './routes/admin-settings.js';
 import { handleAdminUserRoutes }       from './routes/admin-users.js';
@@ -281,6 +283,8 @@ export default {
         (await handleApplicationRoutes(request, env))     ??
         (await handleAdminApplicationRoutes(request, env)) ??
         (await handleAdminApplicationSetupRoutes(request, env)) ??
+        (await handleAdminApplicationTypeRoutes(request, env)) ??
+        (await handleAdminPremisesVerificationRoutes(request, env)) ??
         (await handleAdminUserRoutes(request, env))       ??
         (await handleAdminSettingsRoutes(request, env))   ??
         (await handleAdminAuditRoutes(request, env))      ??

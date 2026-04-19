@@ -114,6 +114,32 @@ async function createApplication(request, env) {
   `;
   if (premisesRows.length === 0) return error('Premises not found for this applicant', 404);
 
+  // Enforce: applicants may only create applications against verified premises.
+  // This is a backend guard — the frontend may also block this, but the backend
+  // is the authoritative check.
+  if (premisesRows[0].verification_state !== 'verified') {
+    return error(
+      'Applications can only be created against a verified premises. Submit your premises for verification first.',
+      409,
+    );
+  }
+
+  // Resolve the currently published application type version for this tenant.
+  // This is snapshotted on the application so historical records remain stable
+  // even after the version is retired.
+  const versionRows = await sql`
+    SELECT id
+    FROM application_type_versions
+    WHERE tenant_id = ${session.tenant_id}
+      AND application_type_id = ${application_type_id}
+      AND publication_status = 'published'
+    LIMIT 1
+  `;
+  if (versionRows.length === 0) {
+    return error('No published version of this application type is available for this tenant', 400);
+  }
+  const applicationTypeVersionId = versionRows[0].id;
+
   const premisesSnapshot = buildApplicationPremisesSnapshot(premisesRows[0]);
 
   const rows = await sql`
@@ -121,6 +147,7 @@ async function createApplication(request, env) {
       tenant_id,
       applicant_account_id,
       application_type_id,
+      application_type_version_id,
       premises_id,
       applicant_name,
       applicant_email,
@@ -138,6 +165,7 @@ async function createApplication(request, env) {
       ${session.tenant_id},
       ${session.applicant_account_id},
       ${application_type_id},
+      ${applicationTypeVersionId},
       ${premises_id},
       ${session.full_name},
       ${session.email},

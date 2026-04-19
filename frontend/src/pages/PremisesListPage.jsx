@@ -5,6 +5,14 @@ import { useAuth } from '../auth-context.jsx';
 import Layout from '../components/Layout.jsx';
 import { buildApplicantNav } from '../lib/navigation.js';
 
+const VERIFICATION_STATE_LABELS = {
+  unverified: 'Not submitted',
+  pending_verification: 'Awaiting review',
+  verified: 'Verified',
+  verification_refused: 'Refused',
+  more_information_required: 'Info required',
+};
+
 export default function PremisesListPage() {
   const navigate = useNavigate();
   const { session } = useAuth();
@@ -48,11 +56,10 @@ export default function PremisesListPage() {
         <div className="form-section-title">Your premises</div>
         <h1 className="page-title">Manage your premises</h1>
         <p className="page-subtitle">
-          Create each premises once, then reuse it when you start a new application for this council.
+          Add each premises once. Once it is verified by the council, you can start licence applications against it.
         </p>
         <div className="platform-hero-actions" style={{ marginTop: 24 }}>
           <Link className="btn btn-primary" to="/premises/new">Add premises</Link>
-          <Link className="btn btn-secondary" to="/apply">Start application</Link>
         </div>
       </section>
 
@@ -63,48 +70,58 @@ export default function PremisesListPage() {
       ) : premises.length === 0 ? (
         <section className="form-section">
           <p className="empty-state">
-            You have not added any premises yet.
+            You have not added any premises yet. Add your first premises to get started.
           </p>
           <div className="platform-hero-actions" style={{ marginTop: 16 }}>
-            <Link className="btn btn-primary" to="/premises/new">Create your first premises</Link>
+            <Link className="btn btn-primary" to="/premises/new">Add your first premises</Link>
           </div>
         </section>
       ) : (
         <section className="form-section">
           <div className="application-list">
-            {premises.map((row) => (
-              <Link key={row.id} to={`/premises/${row.id}`} className="application-row">
-                <div className="application-row-main">
-                  <div className="application-row-title">{row.premises_name}</div>
-                  <div className="application-row-meta">
-                    {[row.address_line_1, row.town_or_city, row.postcode].filter(Boolean).join(' | ')}
+            {premises.map((row) => {
+              const isVerified = row.verification_state === 'verified';
+              return (
+                <Link key={row.id} to={`/premises/${row.id}`} className="application-row">
+                  <div className="application-row-main">
+                    <div className="application-row-title">{row.premises_name}</div>
+                    <div className="application-row-meta">
+                      {[row.address_line_1, row.town_or_city, row.postcode].filter(Boolean).join(' · ')}
+                    </div>
+                    <div className="application-row-meta">
+                      Applications: {row.application_count ?? 0}
+                    </div>
                   </div>
-                  <div className="application-row-meta">
-                    Linked applications: {row.application_count ?? 0}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <span className={`status-tag status-verification-${(row.verification_state ?? 'unverified').replace(/_/g, '-')}`}>
+                      {VERIFICATION_STATE_LABELS[row.verification_state] ?? row.verification_state}
+                    </span>
+                    <div className="dashboard-action-controls">
+                      {isVerified && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            navigate(`/apply?premises=${row.id}`);
+                          }}
+                        >
+                          Start application
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        onClick={(event) => handleDelete(event, row.id)}
+                        disabled={deletingId === row.id}
+                      >
+                        {deletingId === row.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div className="dashboard-action-controls dashboard-action-controls-double">
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      navigate(`/apply?premises=${row.id}`);
-                    }}
-                  >
-                    Start application
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger btn-sm"
-                    onClick={(event) => handleDelete(event, row.id)}
-                    disabled={deletingId === row.id}
-                  >
-                    {deletingId === row.id ? 'Deleting...' : 'Delete'}
-                  </button>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}

@@ -1,15 +1,15 @@
 /**
- * Application types route.
+ * Application types route — public, applicant-facing.
  *
- * Returns the list of application types that are enabled for the
- * current tenant. This is what the frontend uses to populate
- * the "start a new application" screen.
+ * Returns the list of application types that have a PUBLISHED version
+ * for the current tenant. Serves from application_type_versions so
+ * display names and publication state are tenant-controlled.
  *
  * Routes:
- *   GET /application-types
+ *   GET /api/application-types
  *
  * Auth: none.
- * Tenant: resolved from the current request hostname.
+ * Tenant: resolved from request hostname.
  */
 
 import { getDb } from '../db/client.js';
@@ -27,26 +27,31 @@ function error(message, status = 400) {
 }
 
 // ---------------------------------------------------------------------------
-// GET /application-types
+// GET /api/application-types
 // ---------------------------------------------------------------------------
 async function listApplicationTypes(request, env) {
   const sql = getDb(env);
   const tenant = await resolveTenant(request, sql, env);
   if (!tenant) return error('Tenant not found or not available', 403);
 
-  // Only return types the tenant has enabled
+  // Serve from application_type_versions — only published versions are visible.
+  // name_override and description_override allow the tenant to customise the
+  // public-facing text without altering the platform catalogue.
   const rows = await sql`
     SELECT
-      at.id,
+      at.id AS application_type_id,
+      atv.id AS application_type_version_id,
       at.slug,
-      at.name,
-      at.description
-    FROM application_types at
-    INNER JOIN tenant_enabled_application_types teat
-      ON teat.application_type_id = at.id
-      AND teat.tenant_id = ${tenant.id}
-    WHERE at.is_active = true
-    ORDER BY at.name ASC
+      COALESCE(atv.name_override, at.name) AS name,
+      COALESCE(atv.description_override, at.description) AS description,
+      atv.version_number,
+      atv.review_mode
+    FROM application_type_versions atv
+    INNER JOIN application_types at ON at.id = atv.application_type_id
+    WHERE atv.tenant_id = ${tenant.id}
+      AND atv.publication_status = 'published'
+      AND at.is_active = true
+    ORDER BY name ASC
   `;
 
   return json({ application_types: rows });
