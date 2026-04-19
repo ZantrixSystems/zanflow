@@ -11,7 +11,7 @@ function formatDate(value) {
 }
 
 export default function AdminApplicationTypesPage() {
-  const { session, logout } = useStaffAuth();
+  const { session, logout, refresh } = useStaffAuth();
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -74,6 +74,7 @@ export default function AdminApplicationTypesPage() {
     <AdminLayout
       session={session}
       onSignOut={logout}
+      onSessionRefresh={refresh}
       breadcrumbs={[
         { to: '/admin/dashboard', label: 'Council admin' },
         { label: 'Application types' },

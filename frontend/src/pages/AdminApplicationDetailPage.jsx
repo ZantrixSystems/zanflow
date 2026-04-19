@@ -38,7 +38,7 @@ function DataRow({ label, value }) {
 
 export default function AdminApplicationDetailPage() {
   const { id } = useParams();
-  const { session, logout } = useStaffAuth();
+  const { session, logout, refresh } = useStaffAuth();
   const [application, setApplication] = useState(null);
   const [decisions, setDecisions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -137,6 +137,7 @@ export default function AdminApplicationDetailPage() {
     <AdminLayout
       session={session}
       onSignOut={logout}
+      onSessionRefresh={refresh}
       breadcrumbs={[
         { to: '/admin/dashboard', label: 'Dashboard' },
         { to: '/admin/applications', label: 'Applications' },

@@ -43,7 +43,7 @@ function emptyForm() {
 }
 
 export default function AdminSettingsPage() {
-  const { session, logout } = useStaffAuth();
+  const { session, logout, refresh } = useStaffAuth();
   const [settings, setSettings] = useState(null);
   const [form, setForm] = useState(emptyForm());
   const [loading, setLoading] = useState(true);
@@ -112,6 +112,7 @@ export default function AdminSettingsPage() {
     <AdminLayout
       session={session}
       onSignOut={logout}
+      onSessionRefresh={refresh}
       breadcrumbs={[
         { to: '/admin/dashboard', label: 'Dashboard' },
         { label: 'Settings' },

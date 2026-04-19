@@ -16,7 +16,7 @@ function emptySetup() {
 }
 
 export default function AdminApplicationSetupPage() {
-  const { session, logout } = useStaffAuth();
+  const { session, logout, refresh } = useStaffAuth();
   const [setup, setSetup] = useState(emptySetup());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,6 +72,7 @@ export default function AdminApplicationSetupPage() {
     <AdminLayout
       session={session}
       onSignOut={logout}
+      onSessionRefresh={refresh}
       breadcrumbs={[
         { to: '/admin/dashboard', label: 'Council admin' },
         { label: 'Application setup' },

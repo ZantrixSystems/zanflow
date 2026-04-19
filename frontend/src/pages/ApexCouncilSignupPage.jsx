@@ -13,7 +13,6 @@ function slugify(value) {
 export default function ApexCouncilSignupPage() {
   const [form, setForm] = useState({
     organisation_name: '',
-    subdomain_slug: '',
     admin_full_name: '',
     admin_email: '',
     password: '',
@@ -25,9 +24,9 @@ export default function ApexCouncilSignupPage() {
   const [saving, setSaving] = useState(false);
 
   const hostnamePreview = useMemo(() => {
-    const slug = slugify(form.subdomain_slug || form.organisation_name);
+    const slug = slugify(form.organisation_name);
     return slug ? `${slug}.zanflo.com` : 'your-council.zanflo.com';
-  }, [form.organisation_name, form.subdomain_slug]);
+  }, [form.organisation_name]);
 
   function setField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -42,13 +41,10 @@ export default function ApexCouncilSignupPage() {
     try {
       const payload = {
         ...form,
-        subdomain_slug: slugify(form.subdomain_slug || form.organisation_name),
+        subdomain_slug: slugify(form.organisation_name),
       };
       const data = await api.platformSignup(payload);
       setNotice(`Workspace created. Taking you to ${data.tenant.hostname} now…`);
-      // Leave saving=true so the button stays disabled while the browser navigates.
-      // The bootstrap exchange page at the tenant subdomain handles the 7-second
-      // progress screen and final redirect to /admin/dashboard.
       window.location.href = data.bootstrap_redirect;
     } catch (err) {
       setError(err.message || 'Could not create your council workspace.');
@@ -62,7 +58,7 @@ export default function ApexCouncilSignupPage() {
         <div className="form-section-title">Council self-service setup</div>
         <h1 className="page-title">Create your council workspace</h1>
         <p className="page-subtitle">
-          This creates your council&apos;s own Zanflo site, your first tenant admin account, and the public applicant homepage for your council.
+          This creates your council&apos;s own Zanflo site, your first admin account, and the public applicant homepage for your council.
         </p>
       </section>
 
@@ -80,28 +76,15 @@ export default function ApexCouncilSignupPage() {
               placeholder="Riverside Council"
               required
             />
+            {form.organisation_name && (
+              <span className="form-hint">
+                Your council site will be at <strong>{hostnamePreview}</strong>
+              </span>
+            )}
           </div>
 
           <div className="form-group">
-            <label htmlFor="subdomain_slug">Council subdomain</label>
-            <div className="subdomain-input-row">
-              <input
-                id="subdomain_slug"
-                value={form.subdomain_slug}
-                onChange={(event) => setField('subdomain_slug', slugify(event.target.value))}
-                placeholder="riverside"
-                autoComplete="off"
-                required
-              />
-              <span className="subdomain-suffix">.zanflo.com</span>
-            </div>
-            <span className="form-hint">
-              Your council will get its own secure address, for example <strong>{hostnamePreview}</strong>. Your staff and applicants will use this council specific site.
-            </span>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="admin_full_name">Bootstrap admin full name</label>
+            <label htmlFor="admin_full_name">Admin name</label>
             <input
               id="admin_full_name"
               value={form.admin_full_name}
@@ -112,7 +95,7 @@ export default function ApexCouncilSignupPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="admin_email">Bootstrap admin email</label>
+            <label htmlFor="admin_email">Admin email</label>
             <input
               id="admin_email"
               type="email"
@@ -124,7 +107,7 @@ export default function ApexCouncilSignupPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Bootstrap password</label>
+            <label htmlFor="password">Password</label>
             <input
               id="password"
               type="password"
@@ -134,12 +117,12 @@ export default function ApexCouncilSignupPage() {
               required
             />
             <span className="form-hint">
-              This is your high-privilege local break glass account for first setup and emergency access. Use at least 8 characters, including an uppercase letter and a number.
+              This is your admin account password for sign-in and emergency access. Use at least 8 characters, including an uppercase letter and a number.
             </span>
           </div>
 
           <div className="form-group">
-            <label htmlFor="password_confirmation">Confirm bootstrap password</label>
+            <label htmlFor="password_confirmation">Confirm password</label>
             <input
               id="password_confirmation"
               type="password"
@@ -157,7 +140,7 @@ export default function ApexCouncilSignupPage() {
               checked={form.accept_terms}
               onChange={(event) => setField('accept_terms', event.target.checked)}
             />
-            <span>I understand this creates a live council workspace and a high-privilege bootstrap admin account.</span>
+            <span>I understand this creates a live council workspace and an admin account.</span>
           </label>
 
           <div className="platform-hero-actions" style={{ marginTop: 20 }}>

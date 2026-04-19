@@ -61,7 +61,7 @@ function OfficerDashboard({ session }) {
 }
 
 export default function TenantAdminDashboardPage() {
-  const { session, logout } = useStaffAuth();
+  const { session, logout, refresh } = useStaffAuth();
   const [searchParams] = useSearchParams();
   const isWelcome = searchParams.get('welcome') === '1';
 
@@ -131,6 +131,7 @@ export default function TenantAdminDashboardPage() {
     <AdminLayout
       session={session}
       onSignOut={logout}
+      onSessionRefresh={refresh}
       breadcrumbs={[{ label: councilName ? `${councilName} admin` : 'Admin' }]}
     >
       {loadError && <div className="alert alert-error">{loadError}</div>}

@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { buildTenantAdminNav } from '../lib/navigation.js';
 import NotificationBell from './NotificationBell.jsx';
+import AdminProfileModal from './AdminProfileModal.jsx';
 
-export default function AdminLayout({ children, session, onSignOut, breadcrumbs = [] }) {
+export default function AdminLayout({ children, session, onSignOut, onSessionRefresh, breadcrumbs = [] }) {
   const navigate = useNavigate();
   const navItems = buildTenantAdminNav(session);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   async function handleLogout() {
     await onSignOut();
@@ -41,7 +44,15 @@ export default function AdminLayout({ children, session, onSignOut, breadcrumbs 
           <div className="admin-sidebar-bell">
             <NotificationBell />
           </div>
-          <div className="admin-sidebar-user">{session?.full_name}</div>
+          <button
+            type="button"
+            className="admin-sidebar-user-btn"
+            onClick={() => setProfileOpen(true)}
+            title="View profile"
+          >
+            <span className="admin-sidebar-user-avatar">{session?.full_name?.charAt(0) ?? '?'}</span>
+            <span className="admin-sidebar-user-name">{session?.full_name}</span>
+          </button>
           <button type="button" onClick={handleLogout} className="admin-sidebar-signout">
             Sign out
           </button>
@@ -69,6 +80,13 @@ export default function AdminLayout({ children, session, onSignOut, breadcrumbs 
           {children}
         </main>
       </div>
+
+      {profileOpen && (
+        <AdminProfileModal
+          onClose={() => setProfileOpen(false)}
+          onSessionRefresh={onSessionRefresh ?? (() => Promise.resolve())}
+        />
+      )}
     </div>
   );
 }

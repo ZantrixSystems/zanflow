@@ -30,7 +30,7 @@ function formatShortDate(value) {
 }
 
 export default function AdminApplicationsPage() {
-  const { session, logout } = useStaffAuth();
+  const { session, logout, refresh } = useStaffAuth();
   const [urlParams] = useSearchParams();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +69,7 @@ export default function AdminApplicationsPage() {
     <AdminLayout
       session={session}
       onSignOut={logout}
+      onSessionRefresh={refresh}
       breadcrumbs={[
         { to: '/admin/dashboard', label: 'Dashboard' },
         { label: 'Applications' },

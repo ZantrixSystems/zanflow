@@ -4,6 +4,7 @@ import AdminLayout from '../components/AdminLayout.jsx';
 import { api } from '../api.js';
 import { useStaffAuth } from '../components/RequireStaffAuth.jsx';
 
+
 function formatDate(value) {
   if (!value) return 'Not recorded';
   return new Date(value).toLocaleString('en-GB');
@@ -21,7 +22,7 @@ const VERIFICATION_STATE_LABELS = {
 // List page
 // ---------------------------------------------------------------------------
 export function AdminPremisesVerificationListPage() {
-  const { session, logout } = useStaffAuth();
+  const { session, logout, refresh } = useStaffAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -39,6 +40,7 @@ export function AdminPremisesVerificationListPage() {
     <AdminLayout
       session={session}
       onSignOut={logout}
+      onSessionRefresh={refresh}
       breadcrumbs={[
         { to: '/admin/dashboard', label: 'Council admin' },
         { label: 'Premises verifications' },
@@ -113,7 +115,7 @@ export function AdminPremisesVerificationListPage() {
 // ---------------------------------------------------------------------------
 export function AdminPremisesVerificationDetailPage() {
   const { id } = useParams();
-  const { session, logout } = useStaffAuth();
+  const { session, logout, refresh } = useStaffAuth();
   const navigate = useNavigate();
   const [premises, setPremises] = useState(null);
   const [events, setEvents] = useState([]);
@@ -164,6 +166,7 @@ export function AdminPremisesVerificationDetailPage() {
     <AdminLayout
       session={session}
       onSignOut={logout}
+      onSessionRefresh={refresh}
       breadcrumbs={[
         { to: '/admin/dashboard', label: 'Council admin' },
         { to: '/admin/premises-verifications', label: 'Premises verifications' },

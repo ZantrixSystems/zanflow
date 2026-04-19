@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 
 const MIN_DURATION_MS = 7000;
@@ -23,7 +23,6 @@ function getSlugFromHostname() {
 }
 
 export default function TenantBootstrapExchangePage() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState('');
   const [step, setStep] = useState(0);
@@ -33,23 +32,22 @@ export default function TenantBootstrapExchangePage() {
   const exchangeDone = useRef(false);
   const timerDone = useRef(false);
   const navigated = useRef(false);
-  const navigateRef = useRef(navigate);
+  const exchangeAttempted = useRef(false);
 
   useEffect(() => {
-    navigateRef.current = navigate;
-  }, [navigate]);
+    if (exchangeAttempted.current) return;
+    exchangeAttempted.current = true;
 
-  useEffect(() => {
     function maybeNavigate() {
       if (exchangeDone.current && timerDone.current && !navigated.current && navigateTarget.current) {
         navigated.current = true;
-        navigateRef.current(navigateTarget.current, { replace: true });
+        window.location.href = navigateTarget.current;
       }
     }
 
     const token = searchParams.get('token');
     if (!token) {
-      setError('Bootstrap link is missing its token.');
+      setError('Sign-in link is missing its token.');
       return;
     }
 
@@ -73,7 +71,7 @@ export default function TenantBootstrapExchangePage() {
       .catch((err) => {
         clearTimeout(minTimer);
         stepTimers.forEach(clearTimeout);
-        setError(err.message || 'Bootstrap sign-in failed.');
+        setError(err.message || 'Sign-in failed. Please try again.');
       });
 
     return () => {

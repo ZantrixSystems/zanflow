@@ -11,7 +11,7 @@ const EMPTY_FORM = {
 };
 
 export default function AdminUsersPage() {
-  const { session, logout } = useStaffAuth();
+  const { session, logout, refresh } = useStaffAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -69,6 +69,7 @@ export default function AdminUsersPage() {
     <AdminLayout
       session={session}
       onSignOut={logout}
+      onSessionRefresh={refresh}
       breadcrumbs={[
         { to: '/admin/dashboard', label: 'Council admin' },
         { label: 'Users' },

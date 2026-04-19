@@ -9,7 +9,7 @@ function formatDate(value) {
 }
 
 export default function AdminAuditPage() {
-  const { session, logout } = useStaffAuth();
+  const { session, logout, refresh } = useStaffAuth();
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -25,6 +25,7 @@ export default function AdminAuditPage() {
     <AdminLayout
       session={session}
       onSignOut={logout}
+      onSessionRefresh={refresh}
       breadcrumbs={[
         { to: '/admin/dashboard', label: 'Council admin' },
         { label: 'Audit' },

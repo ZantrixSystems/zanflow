@@ -2,7 +2,8 @@ import { getDb } from '../db/client.js';
 import { hashBootstrapToken } from '../lib/bootstrap-tokens.js';
 import { writeAuditLog } from '../lib/audit.js';
 import { requireStaff } from '../lib/guards.js';
-import { verifyPassword } from '../lib/passwords.js';
+import { hashPassword, verifyPassword } from '../lib/passwords.js';
+import { validateBootstrapPassword } from '../lib/password-policy.js';
 import { isPlatformHost } from '../lib/request-context.js';
 import { buildCookie, clearCookie, signSession } from '../lib/session.js';
 import { resolveTenant } from '../lib/tenant-resolver.js';
@@ -110,7 +111,7 @@ async function bootstrapExchange(request, env) {
   }
 
   const rawToken = body.token?.trim() || '';
-  if (!rawToken) return error('Bootstrap token is required.');
+  if (!rawToken) return error('Sign-in token is required.');
 
   const tokenHash = await hashBootstrapToken(rawToken);
   const rows = await sql`
@@ -135,7 +136,7 @@ async function bootstrapExchange(request, env) {
     LIMIT 1
   `;
 
-  if (rows.length === 0) return error('Bootstrap link is invalid or has expired.', 401);
+  if (rows.length === 0) return error('Sign-in link is invalid or has expired.', 401);
   const bootstrap = rows[0];
 
   await sql`
@@ -204,6 +205,103 @@ async function me(request, env) {
   return json({ session });
 }
 
+async function getProfile(request, env) {
+  if (isPlatformHost(request)) return error('Not found', 404);
+
+  const session = await requireStaff(request, env);
+  if (!session) return error('Not authenticated', 401);
+
+  const sql = getDb(env);
+  const rows = await sql`
+    SELECT
+      u.id,
+      u.email,
+      u.full_name,
+      u.username,
+      (u.password_hash IS NOT NULL) AS has_password,
+      t.name AS tenant_name,
+      t.subdomain AS tenant_subdomain
+    FROM users u
+    INNER JOIN memberships m ON m.user_id = u.id AND m.tenant_id = ${session.tenant_id}
+    INNER JOIN tenants t ON t.id = ${session.tenant_id}
+    WHERE u.id = ${session.user_id}
+    LIMIT 1
+  `;
+  const user = rows[0];
+  if (!user) return error('User not found', 404);
+
+  return json({
+    profile: {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      username: user.username,
+      role: session.role,
+      has_password: user.has_password,
+      tenant_name: user.tenant_name,
+      tenant_subdomain: user.tenant_subdomain,
+    },
+  });
+}
+
+async function updateProfile(request, env) {
+  if (isPlatformHost(request)) return error('Not found', 404);
+
+  const session = await requireStaff(request, env);
+  if (!session) return error('Not authenticated', 401);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return error('Invalid JSON body');
+  }
+
+  const sql = getDb(env);
+  const rows = await sql`
+    SELECT id, full_name, email, password_hash
+    FROM users
+    WHERE id = ${session.user_id}
+    LIMIT 1
+  `;
+  const user = rows[0];
+  if (!user) return error('User not found', 404);
+  if (!user.password_hash) return error('SSO-managed accounts cannot be edited here.', 403);
+
+  const newName = body.full_name?.trim() || '';
+  if (!newName) return error('Full name is required.');
+
+  if (body.new_password) {
+    if (!body.current_password) return error('Current password is required to change password.');
+    const valid = await verifyPassword(body.current_password, user.password_hash);
+    if (!valid) return error('Current password is incorrect.', 401);
+    if (body.new_password !== body.new_password_confirmation) {
+      return error('Password confirmation does not match.');
+    }
+    const passwordError = validateBootstrapPassword(body.new_password);
+    if (passwordError) return error(passwordError);
+
+    const newHash = await hashPassword(body.new_password);
+    await sql`
+      UPDATE users
+      SET full_name = ${newName}, password_hash = ${newHash}, updated_at = NOW()
+      WHERE id = ${session.user_id}
+    `;
+  } else {
+    await sql`
+      UPDATE users
+      SET full_name = ${newName}, updated_at = NOW()
+      WHERE id = ${session.user_id}
+    `;
+  }
+
+  const newToken = await signSession({ ...session, full_name: newName }, env.JWT_SECRET);
+
+  return json({ ok: true, full_name: newName }, 200, {
+    'Set-Cookie': buildCookie(newToken),
+  });
+}
+
 export async function handleStaffAuthRoutes(request, env) {
   const url = new URL(request.url);
   const { method } = request;
@@ -212,6 +310,8 @@ export async function handleStaffAuthRoutes(request, env) {
   if (method === 'POST' && url.pathname === '/api/staff/bootstrap-exchange') return bootstrapExchange(request, env);
   if (method === 'POST' && url.pathname === '/api/staff/logout') return logout(request);
   if (method === 'GET' && url.pathname === '/api/staff/me') return me(request, env);
+  if (method === 'GET' && url.pathname === '/api/staff/profile') return getProfile(request, env);
+  if (method === 'PUT' && url.pathname === '/api/staff/profile') return updateProfile(request, env);
 
   return null;
 }

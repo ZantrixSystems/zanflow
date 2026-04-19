@@ -120,6 +120,8 @@ export const api = {
   staffBootstrapExchange: (body) => request('POST', '/api/staff/bootstrap-exchange', body),
   staffLogout: () => request('POST', '/api/staff/logout'),
   staffMe: () => request('GET', '/api/staff/me'),
+  getStaffProfile: () => request('GET', '/api/staff/profile'),
+  updateStaffProfile: (body) => request('PUT', '/api/staff/profile', body),
 
   platformLogin: (body) => request('POST', '/api/platform/login', body, { includeTenantHeader: false }),
   platformLogout: () => request('POST', '/api/platform/logout', undefined, { includeTenantHeader: false }),

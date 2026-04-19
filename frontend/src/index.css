@@ -270,11 +270,44 @@ body { min-height: 100vh; }
   gap: 6px;
 }
 
-.admin-sidebar-user {
+.admin-sidebar-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 4px;
+  background: none;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+  transition: background 0.1s;
+}
+
+.admin-sidebar-user-btn:hover {
+  background: var(--color-surface-high);
+}
+
+.admin-sidebar-user-avatar {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  background: rgba(115, 92, 0, 0.15);
+  color: var(--color-primary);
+  font-size: .75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+}
+
+.admin-sidebar-user-name {
   font-size: .75rem;
   color: var(--color-text-muted);
   font-weight: 500;
-  padding: 0 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -283,7 +316,7 @@ body { min-height: 100vh; }
 .admin-sidebar-signout {
   background: none;
   border: none;
-  padding: 0 2px;
+  padding: 0 4px;
   font-size: .75rem;
   font-family: inherit;
   color: var(--color-text-muted);
@@ -293,6 +326,112 @@ body { min-height: 100vh; }
 
 .admin-sidebar-signout:hover {
   color: var(--color-primary);
+}
+
+/* ============================================================
+   Admin profile modal
+   ============================================================ */
+
+.profile-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(27, 28, 25, 0.4);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.profile-modal {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+}
+
+.profile-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.profile-modal-title {
+  font-size: .9375rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.profile-modal-close {
+  background: none;
+  border: none;
+  font-size: .875rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.profile-modal-close:hover {
+  background: var(--color-surface-high);
+  color: var(--color-text);
+}
+
+.profile-detail-list {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-detail-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.profile-detail-label {
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.profile-detail-value {
+  font-size: .875rem;
+  color: var(--color-text);
+  word-break: break-all;
+}
+
+.profile-modal-footer {
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.profile-edit-form {
+  padding: 16px 18px;
+}
+
+.profile-section-label {
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 14px 0 10px;
+}
+
+.profile-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
 }
 
 .admin-body {
