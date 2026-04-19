@@ -1,18 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx wrangler secret list*)",
-      "Bash(git commit -m ' *)",
+      "Bash(npx wrangler *)",
       "Bash(git commit *)",
       "Bash(git pull *)",
-      "Bash(node scripts/reset-dev-db.js --confirm-reset)",
-      "Bash(node scripts/seed-dev-data.js)",
+      "Bash(git push *)",
       "Bash(git rebase *)",
-      "Bash(GIT_EDITOR=true git rebase --continue)",
-      "Bash(EDITOR=\"true\" GIT_EDITOR=\"true\" git -c core.editor=\"true\" rebase --continue)",
       "Bash(git fetch *)",
       "Bash(git checkout *)",
-      "Bash(xargs -0 echo)"
+      "Bash(node scripts/reset-dev-db.js --confirm-reset)",
+      "Bash(node scripts/seed-dev-data.js)",
+      "Bash(curl -s* https://*.zanflo.com*)",
+      "Bash(curl -sL* https://*.zanflo.com*)",
+      "Bash(curl -sI* https://*.zanflo.com*)",
+      "Read(C:/Users/mrahm/AppData/Roaming/xdg.config/.wrangler/config/**)"
     ],
     "additionalDirectories": [
       "C:\\git\\zanflo\\zanflo"
