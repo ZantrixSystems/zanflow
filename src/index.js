@@ -269,9 +269,20 @@ export default {
         }
       }
 
-      // Return null to let the assets binding serve the file.
-      // If no asset matches, the binding returns a 404 automatically.
-      return env.ASSETS.fetch(request);
+      // Serve static assets. For HTML responses (index.html / SPA fallback),
+      // strip Cloudflare edge caching so browsers always get the latest
+      // asset-fingerprinted bundle references.
+      const assetResponse = await env.ASSETS.fetch(request);
+      const contentType = assetResponse.headers.get('content-type') ?? '';
+      if (contentType.includes('text/html')) {
+        const headers = new Headers(assetResponse.headers);
+        headers.set('Cache-Control', 'no-store');
+        return new Response(assetResponse.body, {
+          status: assetResponse.status,
+          headers,
+        });
+      }
+      return assetResponse;
     }
 
     try {
