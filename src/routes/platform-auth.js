@@ -19,10 +19,6 @@ function error(message, status = 400) {
   return json({ error: message }, status);
 }
 
-function buildBootstrapAdminUsername(email) {
-  return email.split('@')[0].replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 30) || null;
-}
-
 function buildTenantDefaults(name, adminName, adminEmail) {
   const councilName = name.trim();
   const ownerEmail = adminEmail.trim().toLowerCase();
@@ -91,7 +87,6 @@ async function signup(request, env) {
   const passwordHash = await hashPassword(password);
   const rawBootstrapToken = generateBootstrapToken();
   const bootstrapTokenHash = await hashBootstrapToken(rawBootstrapToken);
-  const bootstrapUsername = buildBootstrapAdminUsername(adminEmail);
   const defaults = buildTenantDefaults(organisationName, adminName, adminEmail);
 
   const rows = await sql`
@@ -126,7 +121,7 @@ async function signup(request, env) {
       )
       VALUES (
         ${adminEmail},
-        ${bootstrapUsername},
+        ${adminEmail},
         ${passwordHash},
         ${adminName},
         false
@@ -282,7 +277,7 @@ async function login(request, env) {
   const identifier = body.identifier?.trim() || body.email?.trim() || '';
   const { password } = body;
   if (!identifier || !password) {
-    return error('Username or email and password are required');
+    return error('Email address and password are required');
   }
 
   const sql = getDb(env);

@@ -73,12 +73,13 @@ export default function TenantAdminLoginPage() {
 
               <form onSubmit={handleSubmit} noValidate>
                 <div className="form-group">
-                  <label htmlFor="identifier">Email or username</label>
+                  <label htmlFor="identifier">Email address</label>
                   <input
                     id="identifier"
+                    type="email"
                     value={identifier}
                     onChange={(event) => setIdentifier(event.target.value)}
-                    autoComplete="username"
+                    autoComplete="email"
                     required
                   />
                 </div>

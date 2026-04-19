@@ -35,7 +35,7 @@ async function login(request, env) {
   const identifier = body.identifier?.trim() || body.email?.trim() || '';
   const { password } = body;
   if (!identifier || !password) {
-    return error('Username or email and password are required');
+    return error('Email address and password are required');
   }
 
   const rows = await sql`

@@ -7,7 +7,6 @@ import { buildTenantAdminNav } from '../lib/navigation.js';
 const EMPTY_FORM = {
   email: '',
   full_name: '',
-  username: '',
   role: 'officer',
   password: '',
 };
@@ -100,9 +99,7 @@ export default function AdminUsersPage() {
               <div key={user.id} className="application-row">
                 <div className="application-row-main">
                   <div className="application-row-title">{user.full_name || user.email}</div>
-                  <div className="application-row-meta">
-                    {user.email} {user.username ? `| ${user.username}` : ''}
-                  </div>
+                  <div className="application-row-meta">{user.email}</div>
                 </div>
                 <div style={{ minWidth: 180 }}>
                   <select value={user.role} onChange={(event) => handleRoleChange(user.id, event.target.value)}>
@@ -129,10 +126,6 @@ export default function AdminUsersPage() {
             <input id="user-name" value={form.full_name} onChange={(event) => updateField('full_name', event.target.value)} required />
           </div>
           <div className="form-group">
-            <label htmlFor="user-username">Username</label>
-            <input id="user-username" value={form.username} onChange={(event) => updateField('username', event.target.value)} />
-          </div>
-          <div className="form-group">
             <label htmlFor="user-role">Role</label>
             <select id="user-role" value={form.role} onChange={(event) => updateField('role', event.target.value)}>
               <option value="tenant_admin">Tenant admin</option>
@@ -144,6 +137,7 @@ export default function AdminUsersPage() {
             <label htmlFor="user-password">Password for new user</label>
             <input id="user-password" type="password" value={form.password} onChange={(event) => updateField('password', event.target.value)} />
           </div>
+          <p className="form-hint">Staff sign in with their email address.</p>
           <button type="submit" className="btn btn-primary" disabled={saving}>
             {saving ? 'Saving...' : 'Create user'}
           </button>

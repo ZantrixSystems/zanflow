@@ -297,11 +297,12 @@ async function createTenantAdmin(request, env, id) {
   }
 
   const passwordHash = await hashPassword(password);
+  const normalizedEmail = email.toLowerCase().trim();
 
   const userRows = await sql`
-    INSERT INTO users (email, password_hash, full_name, is_platform_admin)
-    VALUES (${email.toLowerCase().trim()}, ${passwordHash}, ${full_name.trim()}, false)
-    RETURNING id, email, full_name
+    INSERT INTO users (email, username, password_hash, full_name, is_platform_admin)
+    VALUES (${normalizedEmail}, ${normalizedEmail}, ${passwordHash}, ${full_name.trim()}, false)
+    RETURNING id, email, username, full_name
   `;
   const user = userRows[0];
 

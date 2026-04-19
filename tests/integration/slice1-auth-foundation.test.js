@@ -204,6 +204,7 @@ describe('slice 1 - auth foundation', () => {
     const json = await readJson(response);
     expect(json.tenant.hostname).toBe('test-self-serve-council.zanflo.com');
     expect(json.bootstrap_redirect).toContain('https://test-self-serve-council.zanflo.com/admin/bootstrap?token=');
+    expect(json.admin.username).toBe('bootstrap-admin@test-zanflo.test');
   });
 
   it('rejects self-service platform signup on the platform host', async () => {

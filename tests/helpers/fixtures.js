@@ -123,9 +123,9 @@ export async function createStaffFixture({
   try {
     const passwordHash = await hashPassword(password);
     const userResult = await client.query(`
-      INSERT INTO users (email, password_hash, full_name, is_platform_admin)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id, email, full_name, is_platform_admin
+      INSERT INTO users (email, username, password_hash, full_name, is_platform_admin)
+      VALUES ($1, $1, $2, $3, $4)
+      RETURNING id, email, username, full_name, is_platform_admin
     `, [email, passwordHash, fullName, isPlatformAdmin]);
     const user = userResult.rows[0];
 

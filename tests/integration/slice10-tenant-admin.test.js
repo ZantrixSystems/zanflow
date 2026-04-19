@@ -68,6 +68,7 @@ describe('slice 10 - tenant admin basics', () => {
 
     expect(createResponse.status).toBe(201);
     const created = await readJson(createResponse);
+    expect(created.user.username).toBe('new-tenant-user@test-zanflo.test');
 
     const updateResponse = await fetchWorker(`https://example.test/api/admin/users/${created.user.id}`, {
       method: 'PUT',
