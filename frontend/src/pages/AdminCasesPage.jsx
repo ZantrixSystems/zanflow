@@ -281,10 +281,10 @@ export default function AdminCasesPage() {
         { label: viewTitle },
       ]}
     >
-      <section className="form-section">
-        <h1 className="page-title">{viewTitle}</h1>
-        <p className="page-subtitle">{viewSubtitle}</p>
-      </section>
+      <div className="queue-page-header">
+        <h1 className="queue-page-title">{viewTitle}</h1>
+        <p className="queue-page-subtitle">{viewSubtitle}</p>
+      </div>
 
       {/* Saved filter chips — only visible when there are saved filters or active filters */}
       <SavedFilters
