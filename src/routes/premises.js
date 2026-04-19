@@ -7,6 +7,7 @@ import {
   normalisePremisesPayload,
   validatePremisesPayload,
 } from '../lib/premises.js';
+import { notifyTenantStaff } from '../lib/notifications.js';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -245,6 +246,10 @@ async function updatePremises(request, env, premisesId) {
   const updated = rows[0];
   const syncedApplicationIds = await syncEditableApplicationsForPremises(sql, session, updated);
 
+  const wasSubmitted = ['pending_verification', 'verified', 'more_information_required'].includes(
+    existing.verification_state,
+  );
+
   await writeAuditLog(sql, {
     tenantId: session.tenant_id,
     actorType: 'applicant',
@@ -259,6 +264,16 @@ async function updatePremises(request, env, premisesId) {
       synced_application_ids: syncedApplicationIds,
     },
   });
+
+  if (wasSubmitted) {
+    await notifyTenantStaff(sql, {
+      tenantId: session.tenant_id,
+      type:     'premises.edited',
+      title:    'Premises record updated',
+      body:     `${updated.premises_name} was edited by the applicant.`,
+      link:     `/admin/premises-verifications`,
+    }).catch(() => {});
+  }
 
   return json(serialisePremises(updated));
 }

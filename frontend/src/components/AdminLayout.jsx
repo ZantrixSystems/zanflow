@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { buildTenantAdminNav } from '../lib/navigation.js';
+import NotificationBell from './NotificationBell.jsx';
 
 export default function AdminLayout({ children, session, onSignOut, breadcrumbs = [] }) {
   const navigate = useNavigate();
@@ -37,6 +38,9 @@ export default function AdminLayout({ children, session, onSignOut, breadcrumbs 
           })}
         </nav>
         <div className="admin-sidebar-footer">
+          <div className="admin-sidebar-bell">
+            <NotificationBell />
+          </div>
           <div className="admin-sidebar-user">{session?.full_name}</div>
           <button type="button" onClick={handleLogout} className="admin-sidebar-signout">
             Sign out

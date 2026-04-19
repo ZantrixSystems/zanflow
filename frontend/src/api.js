@@ -112,6 +112,10 @@ export const api = {
   updateAdminApplicationSetup: (body) => request('PUT', '/api/admin/application-setup', body),
   getAdminAudit: () => request('GET', '/api/admin/audit'),
 
+  listAdminNotifications: () => request('GET', '/api/admin/notifications'),
+  markAdminNotificationRead: (id) => request('POST', `/api/admin/notifications/${id}/read`),
+  markAllAdminNotificationsRead: () => request('POST', '/api/admin/notifications/read-all'),
+
   staffLogin: (body) => request('POST', '/api/staff/login', body),
   staffBootstrapExchange: (body) => request('POST', '/api/staff/bootstrap-exchange', body),
   staffLogout: () => request('POST', '/api/staff/logout'),

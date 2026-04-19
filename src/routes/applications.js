@@ -32,6 +32,7 @@ import {
   serialiseApplicationForResponse,
 } from '../lib/field-encryption.js';
 import { buildApplicationPremisesSnapshot } from '../lib/premises.js';
+import { notifyTenantStaff, notifyUser } from '../lib/notifications.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -430,18 +431,41 @@ async function submitApplication(request, env, id) {
     RETURNING *
   `;
 
+  const submitted = rows[0];
+  const isResubmit = app.status === 'awaiting_information';
+
   await writeAuditLog(sql, {
     tenantId:   session.tenant_id,
     actorType:  'applicant',
     actorId:    session.applicant_account_id,
-    action:     app.status === 'awaiting_information'
-      ? 'application.information_submitted'
-      : 'application.submitted',
+    action:     isResubmit ? 'application.information_submitted' : 'application.submitted',
     recordType: 'application',
     recordId:   id,
   });
 
-  return json(await serialiseApplicationForResponse(rows[0], env));
+  const appLink = `/admin/applications/${id}`;
+  const appLabel = submitted.premises_name || submitted.application_type_name || 'application';
+
+  if (isResubmit && submitted.assigned_user_id) {
+    await notifyUser(sql, {
+      tenantId: session.tenant_id,
+      userId:   submitted.assigned_user_id,
+      type:     'application.resubmitted',
+      title:    'Information submitted',
+      body:     `Applicant has responded on ${appLabel}.`,
+      link:     appLink,
+    }).catch(() => {});
+  } else if (!isResubmit) {
+    await notifyTenantStaff(sql, {
+      tenantId: session.tenant_id,
+      type:     'application.submitted',
+      title:    'New application submitted',
+      body:     appLabel,
+      link:     appLink,
+    }).catch(() => {});
+  }
+
+  return json(await serialiseApplicationForResponse(submitted, env));
 }
 
 // ---------------------------------------------------------------------------

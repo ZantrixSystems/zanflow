@@ -28,6 +28,7 @@ import { handleAdminApplicationSetupRoutes } from './routes/admin-application-se
 import { handleAdminApplicationTypeRoutes } from './routes/admin-application-types.js';
 import { handleAdminPremisesVerificationRoutes } from './routes/admin-premises-verifications.js';
 import { handleAdminAuditRoutes }      from './routes/admin-audit.js';
+import { handleAdminNotificationRoutes } from './routes/admin-notifications.js';
 import { handleAdminOnboardingRoutes } from './routes/admin-onboarding.js';
 import { handleAdminSettingsRoutes }   from './routes/admin-settings.js';
 import { handleAdminUserRoutes }       from './routes/admin-users.js';
@@ -290,6 +291,7 @@ export default {
         (await handleAdminOnboardingRoutes(request, env)) ??
         (await handleAdminSettingsRoutes(request, env))   ??
         (await handleAdminAuditRoutes(request, env))      ??
+        (await handleAdminNotificationRoutes(request, env)) ??
         (await handlePlatformAdminRoutes(request, env))   ??
         json({ error: 'Not found' }, 404);
 
