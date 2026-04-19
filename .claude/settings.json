@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npx wrangler secret list*)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(psql \"postgresql://neondb_owner:npg_vbe9QZY1jUcg@ep-polished-feather-abvb906e-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require\" -c \"SELECT EXISTS\\(SELECT 1 FROM information_schema.columns WHERE table_name = 'premises' AND column_name = 'verification_state'\\) AS has_verification_state, EXISTS\\(SELECT 1 FROM information_schema.tables WHERE table_name = 'premises_verification_events'\\) AS has_pve_table, EXISTS\\(SELECT 1 FROM information_schema.tables WHERE table_name = 'application_type_versions'\\) AS has_atv_table, EXISTS\\(SELECT 1 FROM information_schema.columns WHERE table_name = 'applications' AND column_name = 'application_type_version_id'\\) AS has_version_id_col;\")"
     ]
   }
 }
