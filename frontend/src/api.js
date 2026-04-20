@@ -177,6 +177,8 @@ export const api = {
   getStaffProfile: () => request('GET', '/api/staff/profile'),
   updateStaffProfile: (body) => request('PUT', '/api/staff/profile', body),
 
+  publicCouncilLookup: (postcode) => request('GET', `/api/council-lookup?postcode=${encodeURIComponent(postcode)}`, undefined, { includeTenantHeader: false }),
+  councilLookup: (postcode) => request('GET', `/api/platform/council-lookup?postcode=${encodeURIComponent(postcode)}`, undefined, { includeTenantHeader: false }),
   platformLogin: (body) => request('POST', '/api/platform/login', body, { includeTenantHeader: false }),
   platformLogout: () => request('POST', '/api/platform/logout', undefined, { includeTenantHeader: false }),
   platformMe: () => request('GET', '/api/platform/me', undefined, { includeTenantHeader: false }),

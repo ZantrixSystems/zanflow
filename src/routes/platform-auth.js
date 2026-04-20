@@ -7,6 +7,7 @@ import { validateBootstrapPassword } from '../lib/password-policy.js';
 import { isApexHost, isPlatformHost } from '../lib/request-context.js';
 import { validateSubdomain } from '../lib/subdomains.js';
 import { buildCookie, clearCookie, signSession } from '../lib/session.js';
+import { handleCouncilLookup } from '../lib/council-lookup.js';
 
 function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
@@ -348,6 +349,13 @@ async function me(request, env) {
 export async function handlePlatformAuthRoutes(request, env) {
   const url = new URL(request.url);
   const { method } = request;
+
+  // Public council lookup — used by self-serve signup, no auth required.
+  // Only available on the apex host to prevent misuse from tenant subdomains.
+  if (method === 'GET' && url.pathname === '/api/council-lookup') {
+    if (!isApexHost(request)) return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+    return handleCouncilLookup(url.searchParams.get('postcode'));
+  }
 
   if (method === 'POST' && url.pathname === '/api/platform/signup') return signup(request, env);
   if (method === 'POST' && url.pathname === '/api/platform/login') return login(request, env);

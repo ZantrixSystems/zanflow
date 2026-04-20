@@ -25,6 +25,7 @@ import { hashPassword } from '../lib/passwords.js';
 import { isPlatformHost } from '../lib/request-context.js';
 import { writeAuditLog } from '../lib/audit.js';
 import { validateSubdomain } from '../lib/subdomains.js';
+import { handleCouncilLookup } from '../lib/council-lookup.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -367,6 +368,18 @@ async function createTenantAdmin(request, env, id) {
 }
 
 // ---------------------------------------------------------------------------
+// GET /api/platform/council-lookup?postcode=
+// Platform-admin-authenticated proxy to the GOV.UK Local Authorities API.
+// Logic lives in src/lib/council-lookup.js (shared with the public endpoint).
+// ---------------------------------------------------------------------------
+async function councilLookup(request, env) {
+  const session = await requirePlatformAdmin(request, env);
+  if (!session) return error('Not authorised', 403);
+  const postcode = new URL(request.url).searchParams.get('postcode');
+  return handleCouncilLookup(postcode);
+}
+
+// ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
 export async function handlePlatformAdminRoutes(request, env) {
@@ -376,6 +389,7 @@ export async function handlePlatformAdminRoutes(request, env) {
   if (!url.pathname.startsWith('/api/platform/')) return null;
   if (!isPlatformHost(request)) return error('Not found', 404);
 
+  if (method === 'GET'  && url.pathname === '/api/platform/council-lookup') return councilLookup(request, env);
   if (method === 'GET'  && url.pathname === '/api/platform/tenants') return listTenants(request, env);
   if (method === 'POST' && url.pathname === '/api/platform/tenants') return createTenant(request, env);
 
