@@ -11,7 +11,7 @@
  *   { error, kind: "service"    }  502             GOV API unavailable / malformed
  */
 
-const GOV_API = 'https://www.find-local-council.gov.uk';
+const GOV_API = 'https://www.gov.uk';
 const TIMEOUT_MS = 6000;
 
 async function govFetch(url) {
@@ -72,8 +72,8 @@ export async function handleCouncilLookup(postcode) {
     }, 502);
   }
 
-  // Single match — GOV redirects to the authority record
-  if (govRes.status === 301) {
+  // Single match — GOV redirects to the authority record (302)
+  if (govRes.status === 301 || govRes.status === 302) {
     const location = govRes.headers.get('location');
     if (!location) {
       console.error('[council-lookup] GOV 301 with no Location header');
