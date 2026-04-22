@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import AdminLayout from '../components/AdminLayout.jsx';
+import TenantSettingsLayout from '../components/TenantSettingsLayout.jsx';
 import { api } from '../api.js';
-import { useStaffAuth } from '../components/RequireStaffAuth.jsx';
 
 function formatDate(value) {
   if (!value) return 'Not recorded';
@@ -9,7 +8,6 @@ function formatDate(value) {
 }
 
 export default function AdminAuditPage() {
-  const { session, logout, refresh } = useStaffAuth();
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -22,29 +20,18 @@ export default function AdminAuditPage() {
   }, []);
 
   return (
-    <AdminLayout
-      session={session}
-      onSignOut={logout}
-      onSessionRefresh={refresh}
-      breadcrumbs={[
-        { to: '/admin/dashboard', label: 'Council admin' },
-        { label: 'Audit' },
-      ]}
+    <TenantSettingsLayout
+      title="Audit log"
+      description="Recent tenant-scoped mutations recorded for operational traceability."
     >
-      <section className="form-section">
-        <div className="form-section-title">Tenant administration</div>
-        <h1 className="page-title">Audit</h1>
-        <p className="page-subtitle">Recent tenant-scoped mutations recorded for operational traceability.</p>
-      </section>
-
       {error && <div className="alert alert-error">{error}</div>}
 
-      <section className="form-section">
-        <div className="form-section-title">Recent activity</div>
+      <div className="settings-card">
+        <div className="settings-card-title">Recent activity</div>
         {loading ? (
           <div className="spinner">Loading...</div>
         ) : entries.length === 0 ? (
-          <p className="empty-state">No audit entries found.</p>
+          <p className="settings-empty-body" style={{ textAlign: 'left' }}>No audit entries found.</p>
         ) : (
           <div className="application-list">
             {entries.map((entry, index) => (
@@ -52,7 +39,7 @@ export default function AdminAuditPage() {
                 <div className="application-row-main">
                   <div className="application-row-title">{entry.action}</div>
                   <div className="application-row-meta">
-                    Actor: {entry.actor} | Target: {entry.target_type} {entry.target_id}
+                    Actor: {entry.actor} &middot; Target: {entry.target_type} {entry.target_id}
                   </div>
                   <div className="application-row-meta">{formatDate(entry.timestamp)}</div>
                 </div>
@@ -60,7 +47,7 @@ export default function AdminAuditPage() {
             ))}
           </div>
         )}
-      </section>
-    </AdminLayout>
+      </div>
+    </TenantSettingsLayout>
   );
 }
