@@ -3159,6 +3159,23 @@ body { min-height: 100vh; }
   flex: 1;
 }
 
+/* Stacked (vertical) layout for status panel fields */
+.case-inline-panel-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.case-inline-panel-stack .case-inline-panel-field {
+  min-width: 0;
+}
+
+.case-inline-panel-stack .case-action-select,
+.case-inline-panel-stack .case-action-textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .case-inline-panel-actions {
   display: flex;
   gap: 10px;
@@ -3171,12 +3188,45 @@ body { min-height: 100vh; }
   font-size: 0.8rem;
 }
 
-/* Single-column body replacing the old two-column layout */
-.case-body {
+/* Case info sidebar card */
+.case-info-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.case-info-card-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-on-surface-muted);
+  margin-bottom: 12px;
+}
+
+.case-info-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  max-width: 720px;
+  gap: 10px;
+}
+
+.case-info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.case-info-row dt {
+  font-size: 0.75rem;
+  color: var(--color-on-surface-muted);
+  font-weight: 500;
+}
+
+.case-info-row dd {
+  font-size: 0.875rem;
+  color: var(--color-on-surface);
+  margin: 0;
 }
 
 .case-content { min-width: 0; }
