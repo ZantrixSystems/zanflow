@@ -192,11 +192,16 @@ export default function AdminCaseDetailPage() {
   const navigate = useNavigate();
   const { session, logout, refresh } = useStaffAuth();
 
-  // Permission helper — tenant_admin always passes; others check custom permissions
+  // Permission helper — tenant_admin always passes.
+  // If no custom role is assigned, fall back to built-in role defaults.
+  const BUILTIN_PERMISSIONS = {
+    manager: ['cases.view', 'cases.assign', 'cases.decide', 'settings.view', 'audit.view'],
+    officer: ['cases.view', 'cases.assign', 'cases.decide'],
+  };
   function canDo(permission) {
     if (session?.role === 'tenant_admin') return true;
-    if (!session?.permissions) return false;
-    return session.permissions.includes(permission);
+    if (session?.permissions) return session.permissions.includes(permission);
+    return (BUILTIN_PERMISSIONS[session?.role] ?? []).includes(permission);
   }
 
   const [plc, setPlc]           = useState(null);
