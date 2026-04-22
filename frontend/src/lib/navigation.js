@@ -3,7 +3,7 @@ export function buildTenantAdminNav(session) {
     { to: '/admin/dashboard', label: 'Dashboard' },
   ];
 
-  if (session && ['officer', 'manager', 'tenant_admin'].includes(session.role)) {
+  if (session && ['officer', 'manager'].includes(session.role)) {
     items.push(
       { type: 'section', label: 'Licensing' },
       { to: '/admin/cases', label: 'All applications' },
@@ -13,7 +13,6 @@ export function buildTenantAdminNav(session) {
   if (session?.role === 'tenant_admin') {
     items.push(
       { type: 'section', label: 'Administration' },
-      { to: '/admin/users', label: 'Users' },
       { to: '/admin/settings/general', label: 'Settings' },
       { href: '/', label: 'Public site' },
     );

@@ -2328,6 +2328,12 @@ body { min-height: 100vh; }
 .security-score-level.level-fair { color: var(--color-warning); }
 .security-score-level.level-needs_attention { color: var(--color-danger); }
 
+.security-score-hint {
+  font-size: 0.8125rem;
+  color: var(--color-on-surface-muted);
+  margin: 6px 0 10px;
+}
+
 .security-recs {
   list-style: none;
   display: flex;

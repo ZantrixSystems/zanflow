@@ -310,31 +310,36 @@ export default function TenantAdminDashboardPage() {
         </section>
       )}
 
-      {/* Security score — tenant_admin only */}
+      {/* Workspace security — tenant_admin only */}
       {isTenantAdmin && onboarding?.security_score && (
         <section className="security-score-card">
           <div className="security-score-left">
             <ScoreRing score={onboarding.security_score.score} level={onboarding.security_score.level} />
           </div>
           <div className="security-score-right">
-            <div className="security-score-title">Security score</div>
+            <div className="security-score-title">Workspace security</div>
             <div className={`security-score-level level-${onboarding.security_score.level}`}>
-              {onboarding.security_score.level === 'excellent' && 'Excellent'}
-              {onboarding.security_score.level === 'good' && 'Good'}
-              {onboarding.security_score.level === 'fair' && 'Fair'}
-              {onboarding.security_score.level === 'needs_attention' && 'Needs attention'}
+              {onboarding.security_score.level === 'excellent' && 'Fully optimised'}
+              {onboarding.security_score.level === 'good' && 'Good — a few improvements available'}
+              {onboarding.security_score.level === 'fair' && 'Some gaps to address'}
+              {onboarding.security_score.level === 'needs_attention' && 'Attention needed'}
             </div>
-            {onboarding.security_score.recommendations.length > 0 && (
-              <ul className="security-recs">
-                {onboarding.security_score.recommendations.map((rec) => (
-                  <li key={rec.id} className={`security-rec priority-${rec.priority}`}>
-                    <Link to={rec.href} className="security-rec-link">
-                      {rec.label}
-                      <span className="security-rec-points">+{rec.points} pts</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+            {onboarding.security_score.recommendations.length > 0 ? (
+              <>
+                <p className="security-score-hint">Complete these steps to strengthen your workspace:</p>
+                <ul className="security-recs">
+                  {onboarding.security_score.recommendations.map((rec) => (
+                    <li key={rec.id} className={`security-rec priority-${rec.priority}`}>
+                      <Link to={rec.href} className="security-rec-link">
+                        {rec.label}
+                        <span className="security-rec-points">+{rec.points} pts</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="security-score-hint">Your workspace is fully optimised. No further actions required.</p>
             )}
           </div>
         </section>
@@ -345,30 +350,16 @@ export default function TenantAdminDashboardPage() {
         <OfficerDashboard session={session} />
       )}
 
-      {/* Tenant admin actions */}
+      {/* Tenant admin quick links */}
       {isTenantAdmin && settings && (
         <section className="dashboard-action-list">
           <article className="dashboard-action-row">
             <div className="dashboard-action-copy">
-              <h2>Your team</h2>
-              <p>
-                {onboarding?.stats?.staff_count
-                  ? `${onboarding.stats.staff_count} officer${onboarding.stats.staff_count === 1 ? '' : 's'} and managers`
-                  : 'No officers or managers added yet.'}
-              </p>
+              <h2>Workspace settings</h2>
+              <p>Manage your team, roles, permissions, licence sections, and organisation details.</p>
             </div>
             <div className="dashboard-action-controls">
-              <Link className="btn btn-secondary" to="/admin/users">Manage team</Link>
-            </div>
-          </article>
-          <article className="dashboard-action-row">
-            <div className="dashboard-action-copy">
-              <h2>Council settings</h2>
-              <p>Organisation details, public homepage, and SSO configuration.</p>
-            </div>
-            <div className="dashboard-action-controls dashboard-action-controls-double">
-              <Link className="btn btn-secondary" to="/admin/settings">Settings</Link>
-              <Link className="btn btn-secondary" to="/admin/audit">Audit log</Link>
+              <Link className="btn btn-primary" to="/admin/settings/general">Open settings</Link>
             </div>
           </article>
         </section>
