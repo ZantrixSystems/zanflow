@@ -395,214 +395,197 @@ export default function AdminCaseDetailPage() {
           {error  && <div className="alert alert-error">{error}</div>}
           {notice && <div className="alert alert-success">{notice}</div>}
 
-          <div className="case-layout">
-            {/* Left: application information */}
-            <div className="case-content">
-
-              {/* Premises details */}
-              <section className="form-section">
-                <div className="form-section-title">Premises</div>
-                <dl className="case-data-grid">
-                  <DataRow label="Name"        value={plc.premises_name} />
-                  <DataRow label="Address"     value={[plc.address_line_1, plc.address_line_2, plc.town_or_city].filter(Boolean).join(', ')} />
-                  <DataRow label="Postcode"    value={plc.postcode} />
-                  <DataRow label="Description" value={plc.premises_description} />
-                </dl>
-              </section>
-
-              {/* Applicant */}
-              <section className="form-section">
-                <div className="form-section-title">Applicant</div>
-                <dl className="case-data-grid">
-                  <DataRow label="Name"  value={plc.applicant_name} />
-                  <DataRow label="Email" value={plc.applicant_email} />
-                </dl>
-              </section>
-
-              {/* Selected sections */}
-              {sections.length > 0 && (
-                <section className="form-section">
-                  <div className="form-section-title">Licence sections</div>
-                  {sections.map((sec) => (
-                    <div key={sec.id} className="case-section-block">
-                      <div className="case-section-name">{sec.section_name}</div>
-                      {sec.section_description && (
-                        <p className="case-section-desc">{sec.section_description}</p>
-                      )}
-                      {Array.isArray(sec.section_fields) && sec.section_fields.length > 0 && (
-                        <dl className="case-data-grid case-section-answers">
-                          {sec.section_fields.map((field) => {
-                            const val = sec.answers?.[field.key];
-                            if (val === undefined || val === null || val === '') return null;
-                            const display = typeof val === 'boolean' ? (val ? 'Yes' : 'No') : String(val);
-                            return <DataRow key={field.key} label={field.label} value={display} />;
-                          })}
-                        </dl>
-                      )}
-                    </div>
-                  ))}
-                </section>
-              )}
-
-              {/* Timeline */}
-              {events.length > 0 && (
-                <section className="form-section">
-                  <div className="form-section-title-row">
-                    <div className="form-section-title">Timeline</div>
-                    <button
-                      type="button"
-                      className="timeline-sort-toggle"
-                      onClick={() => setTimelineNewest((v) => !v)}
-                    >
-                      {timelineNewest ? 'Newest first ↓' : 'Oldest first ↑'}
-                    </button>
-                  </div>
-                  <ol className="case-timeline">
-                    {visibleEvents.map((ev) => (
-                      <TimelineEvent key={ev.id} event={ev} />
-                    ))}
-                  </ol>
-                  {hasMoreEvents && (
-                    <button
-                      type="button"
-                      className="btn btn-secondary timeline-show-more"
-                      onClick={() => setTimelineVisible((v) => v + TIMELINE_PAGE_SIZE)}
-                    >
-                      Show more ({sortedEvents.length - timelineVisible} remaining)
-                    </button>
-                  )}
-                </section>
-              )}
-
-              {/* Add officer note */}
-              {isActive && (
-                <section className="form-section">
-                  <div className="form-section-title">Internal note</div>
-                  {showNote ? (
-                    <div className="case-action-panel">
-                      <p className="case-action-panel-hint">Not visible to the applicant.</p>
-                      <textarea
-                        className="case-action-textarea"
-                        rows={3}
-                        value={noteText}
-                        onChange={(e) => setNoteText(e.target.value)}
-                        placeholder="Enter your note..."
-                        autoFocus
-                      />
-                      <div className="case-action-panel-btns">
-                        <button type="button" className="btn btn-secondary" onClick={() => setShowNote(false)} disabled={saving}>Cancel</button>
-                        <button type="button" className="btn btn-primary" onClick={submitNote} disabled={saving || !noteText.trim()}>
-                          {saving ? 'Saving…' : 'Save note'}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button type="button" className="btn btn-secondary" onClick={() => setShowNote(true)}>
-                      Add internal note
-                    </button>
-                  )}
-                </section>
-              )}
-            </div>
-
-            {/* Right: actions sidebar */}
-            <aside className="case-sidebar">
-              <div className="case-actions-card">
-                <div className="case-actions-title">Actions</div>
-
-                {isClosed ? (
-                  <>
-                    <p className="case-closed-note">
-                      This application is <strong>{STATUS_META[plc.status]?.label ?? plc.status}</strong>. No further actions available.
-                    </p>
-                    {['manager', 'tenant_admin'].includes(session.role) && (
-                      <>
-                        <div className="case-actions-divider" />
-                        <button type="button" className="btn btn-danger case-action-btn" onClick={handleDelete} disabled={saving}>
-                          Delete application
-                        </button>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {!isAssignedToMe && canDo('cases.assign') && (
-                      <button type="button" className="btn btn-secondary case-action-btn" onClick={handleAssign} disabled={saving}>
-                        Assign to me
-                      </button>
-                    )}
-
-                    {/* Status change control */}
-                    {availableNextStatuses.length > 0 && canDo('cases.decide') && (
-                      showStatusPanel ? (
-                        <div className="case-action-panel">
-                          <div className="case-action-panel-title">Change status</div>
-
-                          <label className="case-action-label" htmlFor="next-status-select">Next status</label>
-                          <select
-                            id="next-status-select"
-                            className="case-action-select"
-                            value={nextStatus}
-                            onChange={(e) => setNextStatus(e.target.value)}
-                          >
-                            <option value="">Select…</option>
-                            {availableNextStatuses.map((s) => (
-                              <option key={s} value={s}>{NEXT_STATUS_LABELS[s] ?? STATUS_META[s]?.label ?? s}</option>
-                            ))}
-                          </select>
-
-                          <label className="case-action-label" htmlFor="status-comment">
-                            Comment {refusalSelected ? '(required)' : '(required)'}
-                          </label>
-                          <textarea
-                            id="status-comment"
-                            className="case-action-textarea"
-                            rows={3}
-                            value={statusComment}
-                            onChange={(e) => setStatusComment(e.target.value)}
-                            placeholder={refusalSelected ? 'Reason for refusal…' : 'Add a comment…'}
-                            autoFocus
-                          />
-
-                          <div className="case-action-panel-btns">
-                            <button type="button" className="btn btn-secondary" onClick={cancelStatusPanel} disabled={saving}>Cancel</button>
-                            <button
-                              type="button"
-                              className={`btn ${nextStatus === 'refused' ? 'btn-danger' : 'btn-primary'}`}
-                              onClick={submitStatusChange}
-                              disabled={saving || !nextStatus || !statusComment.trim()}
-                            >
-                              {saving ? 'Saving…' : nextStatus === 'licensed' ? 'Grant licence' : nextStatus === 'refused' ? 'Confirm refusal' : 'Confirm'}
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <button type="button" className="btn btn-primary case-action-btn" onClick={openStatusPanel} disabled={saving}>
-                          Update status
-                        </button>
-                      )
-                    )}
-
-                    <div className="case-actions-divider" />
-                    {['manager', 'tenant_admin'].includes(session.role) && canDo('cases.decide') && (
-                      <button type="button" className="btn btn-danger case-action-btn" onClick={handleDelete} disabled={saving}>
-                        Delete application
-                      </button>
-                    )}
-                  </>
+          {/* Action bar */}
+          {isActive && (
+            <div className="case-action-bar">
+              <div className="case-action-bar-buttons">
+                {!isAssignedToMe && canDo('cases.assign') && (
+                  <button type="button" className="btn btn-secondary" onClick={handleAssign} disabled={saving}>
+                    Assign to me
+                  </button>
+                )}
+                {availableNextStatuses.length > 0 && canDo('cases.decide') && (
+                  <button
+                    type="button"
+                    className={`btn btn-primary${showStatusPanel ? ' active' : ''}`}
+                    onClick={showStatusPanel ? cancelStatusPanel : openStatusPanel}
+                    disabled={saving}
+                  >
+                    Update status
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={`btn btn-secondary${showNote ? ' active' : ''}`}
+                  onClick={() => { setShowNote((v) => !v); if (showStatusPanel) cancelStatusPanel(); }}
+                  disabled={saving}
+                >
+                  Internal note
+                </button>
+                {['manager', 'tenant_admin'].includes(session.role) && canDo('cases.decide') && (
+                  <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={saving}>
+                    Delete
+                  </button>
                 )}
               </div>
 
-              {/* Application metadata */}
-              <div className="case-actions-card" style={{ marginTop: '1rem' }}>
-                <div className="case-actions-title">Application info</div>
-                <dl className="case-data-grid">
-                  <DataRow label="Submitted"     value={formatDate(plc.submitted_at)} />
-                  <DataRow label="Last modified" value={plc.last_modified_at ? formatDate(plc.last_modified_at) : null} />
-                  <DataRow label="Updated"       value={formatDate(plc.updated_at)} />
-                </dl>
+              {/* Inline status panel */}
+              {showStatusPanel && (
+                <div className="case-inline-panel">
+                  <div className="case-inline-panel-row">
+                    <div className="case-inline-panel-field">
+                      <label className="case-action-label" htmlFor="next-status-select">Change status to</label>
+                      <select
+                        id="next-status-select"
+                        className="case-action-select"
+                        value={nextStatus}
+                        onChange={(e) => setNextStatus(e.target.value)}
+                        autoFocus
+                      >
+                        <option value="">Select…</option>
+                        {availableNextStatuses.map((s) => (
+                          <option key={s} value={s}>{NEXT_STATUS_LABELS[s] ?? STATUS_META[s]?.label ?? s}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="case-inline-panel-field case-inline-panel-field-grow">
+                      <label className="case-action-label" htmlFor="status-comment">Comment (required)</label>
+                      <textarea
+                        id="status-comment"
+                        className="case-action-textarea"
+                        rows={2}
+                        value={statusComment}
+                        onChange={(e) => setStatusComment(e.target.value)}
+                        placeholder={nextStatus === 'refused' ? 'Reason for refusal…' : nextStatus === 'returned_to_applicant' ? 'Explain what needs to be corrected…' : 'Add a comment…'}
+                      />
+                    </div>
+                  </div>
+                  <div className="case-inline-panel-actions">
+                    <button type="button" className="btn btn-secondary" onClick={cancelStatusPanel} disabled={saving}>Cancel</button>
+                    <button
+                      type="button"
+                      className={`btn ${nextStatus === 'refused' ? 'btn-danger' : 'btn-primary'}`}
+                      onClick={submitStatusChange}
+                      disabled={saving || !nextStatus || !statusComment.trim()}
+                    >
+                      {saving ? 'Saving…' : nextStatus === 'licensed' ? 'Grant licence' : nextStatus === 'refused' ? 'Confirm refusal' : 'Confirm'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Inline note panel */}
+              {showNote && (
+                <div className="case-inline-panel">
+                  <label className="case-action-label">Internal note <span className="case-action-label-hint">— not visible to the applicant</span></label>
+                  <textarea
+                    className="case-action-textarea"
+                    rows={3}
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                    placeholder="Enter your note…"
+                    autoFocus
+                  />
+                  <div className="case-inline-panel-actions">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowNote(false)} disabled={saving}>Cancel</button>
+                    <button type="button" className="btn btn-primary" onClick={submitNote} disabled={saving || !noteText.trim()}>
+                      {saving ? 'Saving…' : 'Save note'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {isClosed && ['manager', 'tenant_admin'].includes(session.role) && (
+            <div className="case-action-bar">
+              <div className="case-action-bar-buttons">
+                <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={saving}>
+                  Delete application
+                </button>
               </div>
-            </aside>
+            </div>
+          )}
+
+          {/* Application content — single column */}
+          <div className="case-body">
+
+            {/* Premises details */}
+            <section className="form-section">
+              <div className="form-section-title">Premises</div>
+              <dl className="case-data-grid">
+                <DataRow label="Name"        value={plc.premises_name} />
+                <DataRow label="Address"     value={[plc.address_line_1, plc.address_line_2, plc.town_or_city].filter(Boolean).join(', ')} />
+                <DataRow label="Postcode"    value={plc.postcode} />
+                <DataRow label="Description" value={plc.premises_description} />
+              </dl>
+            </section>
+
+            {/* Applicant */}
+            <section className="form-section">
+              <div className="form-section-title">Applicant</div>
+              <dl className="case-data-grid">
+                <DataRow label="Name"  value={plc.applicant_name} />
+                <DataRow label="Email" value={plc.applicant_email} />
+                <DataRow label="Submitted"     value={formatDate(plc.submitted_at)} />
+                <DataRow label="Last modified" value={plc.last_modified_at ? formatDate(plc.last_modified_at) : null} />
+              </dl>
+            </section>
+
+            {/* Selected sections */}
+            {sections.length > 0 && (
+              <section className="form-section">
+                <div className="form-section-title">Licence sections</div>
+                {sections.map((sec) => (
+                  <div key={sec.id} className="case-section-block">
+                    <div className="case-section-name">{sec.section_name}</div>
+                    {sec.section_description && (
+                      <p className="case-section-desc">{sec.section_description}</p>
+                    )}
+                    {Array.isArray(sec.section_fields) && sec.section_fields.length > 0 && (
+                      <dl className="case-data-grid case-section-answers">
+                        {sec.section_fields.map((field) => {
+                          const val = sec.answers?.[field.key];
+                          if (val === undefined || val === null || val === '') return null;
+                          const display = typeof val === 'boolean' ? (val ? 'Yes' : 'No') : String(val);
+                          return <DataRow key={field.key} label={field.label} value={display} />;
+                        })}
+                      </dl>
+                    )}
+                  </div>
+                ))}
+              </section>
+            )}
+
+            {/* Timeline */}
+            {events.length > 0 && (
+              <section className="form-section">
+                <div className="form-section-title-row">
+                  <div className="form-section-title">Timeline</div>
+                  <button
+                    type="button"
+                    className="timeline-sort-toggle"
+                    onClick={() => setTimelineNewest((v) => !v)}
+                  >
+                    {timelineNewest ? 'Newest first ↓' : 'Oldest first ↑'}
+                  </button>
+                </div>
+                <ol className="case-timeline">
+                  {visibleEvents.map((ev) => (
+                    <TimelineEvent key={ev.id} event={ev} />
+                  ))}
+                </ol>
+                {hasMoreEvents && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary timeline-show-more"
+                    onClick={() => setTimelineVisible((v) => v + TIMELINE_PAGE_SIZE)}
+                  >
+                    Show more ({sortedEvents.length - timelineVisible} remaining)
+                  </button>
+                )}
+              </section>
+            )}
           </div>
         </>
       )}

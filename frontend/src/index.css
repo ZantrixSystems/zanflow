@@ -3115,6 +3115,70 @@ body { min-height: 100vh; }
   .case-layout { grid-template-columns: 1fr; }
 }
 
+/* Action bar — sits below workflow steps, above content */
+.case-action-bar {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.case-action-bar-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Inline expanding panel below the action bar buttons */
+.case-inline-panel {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.case-inline-panel-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.case-inline-panel-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+}
+
+.case-inline-panel-field-grow {
+  flex: 1;
+}
+
+.case-inline-panel-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.case-action-label-hint {
+  font-weight: 400;
+  color: var(--color-on-surface-muted);
+  font-size: 0.8rem;
+}
+
+/* Single-column body replacing the old two-column layout */
+.case-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 720px;
+}
+
 .case-content { min-width: 0; }
 
 /* Data grid (replaces paragraph dump) */
