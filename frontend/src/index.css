@@ -3321,10 +3321,28 @@ body { min-height: 100vh; }
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
+.case-timeline-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.case-timeline-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .case-timeline-date {
   font-size: 0.75rem;
   color: var(--color-text-muted);
-  margin-top: 2px;
+  white-space: nowrap;
+  margin-top: 0;
 }
 
 /* Actions sidebar */
