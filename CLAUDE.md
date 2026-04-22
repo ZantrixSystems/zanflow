@@ -304,3 +304,24 @@ Deploy:
 ```bash
 npm run deploy
 ```
+
+## Debugging Live Worker Errors
+
+When a deployed endpoint returns a 500 and the cause is unclear, stream live Worker logs using:
+
+```bash
+npx wrangler tail --format pretty
+```
+
+Then trigger the failing action in the browser. Any `console.error` output — including unhandled exceptions and DB errors — will appear in real time.
+
+Filter to errors only:
+```bash
+npx wrangler tail --format pretty --status error
+```
+
+Common things to check when a 500 appears:
+- DB `CHECK` constraints — a new status or enum value may not be in the constraint yet (requires a migration)
+- Missing imports or undefined functions in the route handler
+- `session` fields that are expected but not present in the JWT payload
+- `writeAuditLog` swallows its own errors — so if audit is the issue it won't surface; check the main handler instead
