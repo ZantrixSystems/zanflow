@@ -12,9 +12,21 @@ export function buildTenantAdminNav(session) {
 
   if (session?.role === 'tenant_admin') {
     items.push(
-      { type: 'section', label: 'Administration' },
-      { to: '/admin/settings/general', label: 'Settings' },
-      { href: '/', label: 'Public site' },
+      { type: 'section', label: 'Organisation' },
+      { to: '/admin/settings/general',     label: 'General' },
+      { to: '/admin/settings/public-site', label: 'Public site' },
+      { to: '/admin/settings/sso',         label: 'Single sign-on' },
+
+      { type: 'section', label: 'Team' },
+      { to: '/admin/users',                label: 'Users' },
+      { to: '/admin/settings/roles',       label: 'Roles & permissions' },
+
+      { type: 'section', label: 'Licensing' },
+      { to: '/admin/licence-sections',     label: 'Licence sections' },
+
+      { type: 'section', label: 'Platform' },
+      { to: '/admin/audit',                label: 'Audit log' },
+      { href: '/',                         label: 'Public site ↗' },
     );
   }
 

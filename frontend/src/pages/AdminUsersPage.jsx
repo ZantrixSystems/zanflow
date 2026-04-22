@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import TenantSettingsLayout from '../components/TenantSettingsLayout.jsx';
+import AdminLayout from '../components/AdminLayout.jsx';
+import { useStaffAuth } from '../components/RequireStaffAuth.jsx';
 import { api } from '../api.js';
 
 const EMPTY_FORM = {
@@ -94,6 +95,7 @@ function EditUserModal({ user, customRoles, onClose, onSaved }) {
 }
 
 export default function AdminUsersPage() {
+  const { session, logout, refresh } = useStaffAuth();
   const [users, setUsers] = useState([]);
   const [customRoles, setCustomRoles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -152,10 +154,7 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <TenantSettingsLayout
-      title="Users"
-      description="Manage staff access for this council."
-    >
+    <AdminLayout session={session} onSignOut={logout} onSessionRefresh={refresh} breadcrumbs={[{ label: 'Users' }]}>
       {error && <div className="alert alert-error">{error}</div>}
       {notice && <div className="alert alert-success">{notice}</div>}
 
@@ -242,6 +241,6 @@ export default function AdminUsersPage() {
           onSaved={handleEditSaved}
         />
       )}
-    </TenantSettingsLayout>
+    </AdminLayout>
   );
 }

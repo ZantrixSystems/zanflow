@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import TenantSettingsLayout from '../components/TenantSettingsLayout.jsx';
+import AdminLayout from '../components/AdminLayout.jsx';
+import { useStaffAuth } from '../components/RequireStaffAuth.jsx';
 import { api } from '../api.js';
 
 const PERMISSION_META = {
@@ -127,6 +128,7 @@ function RoleModal({ role, allPermissions, onSave, onClose }) {
 }
 
 export default function AdminRolesPage() {
+  const { session, logout, refresh } = useStaffAuth();
   const [roles, setRoles] = useState([]);
   const [allPermissions, setAllPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -168,10 +170,7 @@ export default function AdminRolesPage() {
   }
 
   return (
-    <TenantSettingsLayout
-      title="Roles & permissions"
-      description="Create custom roles and control what each role can access within your council."
-    >
+    <AdminLayout session={session} onSignOut={logout} onSessionRefresh={refresh} breadcrumbs={[{ label: 'Roles & permissions' }]}>
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="settings-section-actions">
@@ -279,6 +278,6 @@ export default function AdminRolesPage() {
           onClose={() => setModal(null)}
         />
       )}
-    </TenantSettingsLayout>
+    </AdminLayout>
   );
 }

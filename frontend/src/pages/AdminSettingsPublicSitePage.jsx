@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import TenantSettingsLayout from '../components/TenantSettingsLayout.jsx';
+import AdminLayout from '../components/AdminLayout.jsx';
+import { useStaffAuth } from '../components/RequireStaffAuth.jsx';
 import { api } from '../api.js';
 
 function emptyBranding() {
@@ -12,6 +13,7 @@ function emptyBranding() {
 }
 
 export default function AdminSettingsPublicSitePage() {
+  const { session, logout, refresh } = useStaffAuth();
   const [settings, setSettings] = useState(null);
   const [form, setForm] = useState(emptyBranding());
   const [loading, setLoading] = useState(true);
@@ -55,10 +57,7 @@ export default function AdminSettingsPublicSitePage() {
   }
 
   return (
-    <TenantSettingsLayout
-      title="Public site"
-      description="Content shown on your council's public-facing applicant homepage."
-    >
+    <AdminLayout session={session} onSignOut={logout} onSessionRefresh={refresh} breadcrumbs={[{ label: 'Public site' }]}>
       {error && <div className="alert alert-error">{error}</div>}
       {notice && <div className="alert alert-success">{notice}</div>}
 
@@ -135,6 +134,6 @@ export default function AdminSettingsPublicSitePage() {
           </div>
         </form>
       )}
-    </TenantSettingsLayout>
+    </AdminLayout>
   );
 }

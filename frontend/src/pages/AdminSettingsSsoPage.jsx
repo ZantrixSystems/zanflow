@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import TenantSettingsLayout from '../components/TenantSettingsLayout.jsx';
+import AdminLayout from '../components/AdminLayout.jsx';
+import { useStaffAuth } from '../components/RequireStaffAuth.jsx';
 import { api } from '../api.js';
 
 function emptySso() {
@@ -24,6 +25,7 @@ function emptySso() {
 }
 
 export default function AdminSettingsSsoPage() {
+  const { session, logout, refresh } = useStaffAuth();
   const [settings, setSettings] = useState(null);
   const [form, setForm] = useState(emptySso());
   const [loading, setLoading] = useState(true);
@@ -78,10 +80,7 @@ export default function AdminSettingsSsoPage() {
   }
 
   return (
-    <TenantSettingsLayout
-      title="Single sign-on"
-      description="Connect your council's identity provider via SAML or OIDC. Advanced — most councils skip this on first setup."
-    >
+    <AdminLayout session={session} onSignOut={logout} onSessionRefresh={refresh} breadcrumbs={[{ label: 'Single sign-on' }]}>
       <div className="alert alert-warning">
         Live SSO sign-in is not enabled yet in this build. These settings are stored for setup and later activation.
       </div>
@@ -211,6 +210,6 @@ export default function AdminSettingsSsoPage() {
           </div>
         </form>
       )}
-    </TenantSettingsLayout>
+    </AdminLayout>
   );
 }

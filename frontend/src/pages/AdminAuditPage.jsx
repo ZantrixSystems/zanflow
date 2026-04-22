@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import TenantSettingsLayout from '../components/TenantSettingsLayout.jsx';
+import AdminLayout from '../components/AdminLayout.jsx';
+import { useStaffAuth } from '../components/RequireStaffAuth.jsx';
 import { api } from '../api.js';
 
 function formatDate(value) {
@@ -8,6 +9,7 @@ function formatDate(value) {
 }
 
 export default function AdminAuditPage() {
+  const { session, logout, refresh } = useStaffAuth();
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -20,10 +22,7 @@ export default function AdminAuditPage() {
   }, []);
 
   return (
-    <TenantSettingsLayout
-      title="Audit log"
-      description="Recent tenant-scoped mutations recorded for operational traceability."
-    >
+    <AdminLayout session={session} onSignOut={logout} onSessionRefresh={refresh} breadcrumbs={[{ label: 'Audit log' }]}>
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="settings-card">
@@ -48,6 +47,6 @@ export default function AdminAuditPage() {
           </div>
         )}
       </div>
-    </TenantSettingsLayout>
+    </AdminLayout>
   );
 }

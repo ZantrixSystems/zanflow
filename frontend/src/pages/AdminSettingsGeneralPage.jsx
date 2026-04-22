@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import TenantSettingsLayout from '../components/TenantSettingsLayout.jsx';
+import AdminLayout from '../components/AdminLayout.jsx';
+import { useStaffAuth } from '../components/RequireStaffAuth.jsx';
 import { api } from '../api.js';
 
 function emptyOrg() {
@@ -15,6 +16,7 @@ function emptyOrg() {
 }
 
 export default function AdminSettingsGeneralPage() {
+  const { session, logout, refresh } = useStaffAuth();
   const [settings, setSettings] = useState(null);
   const [form, setForm] = useState(emptyOrg());
   const [loading, setLoading] = useState(true);
@@ -58,10 +60,7 @@ export default function AdminSettingsGeneralPage() {
   }
 
   return (
-    <TenantSettingsLayout
-      title="General"
-      description="Organisation name, support contacts, and internal admin details."
-    >
+    <AdminLayout session={session} onSignOut={logout} onSessionRefresh={refresh} breadcrumbs={[{ label: 'General' }]}>
       {error && <div className="alert alert-error">{error}</div>}
       {notice && <div className="alert alert-success">{notice}</div>}
 
@@ -138,6 +137,6 @@ export default function AdminSettingsGeneralPage() {
           </div>
         </form>
       )}
-    </TenantSettingsLayout>
+    </AdminLayout>
   );
 }
