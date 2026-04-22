@@ -190,6 +190,13 @@ export default function AdminCaseDetailPage() {
   const navigate = useNavigate();
   const { session, logout, refresh } = useStaffAuth();
 
+  // Permission helper — tenant_admin always passes; others check custom permissions
+  function canDo(permission) {
+    if (session?.role === 'tenant_admin') return true;
+    if (!session?.permissions) return false;
+    return session.permissions.includes(permission);
+  }
+
   const [plc, setPlc]           = useState(null);
   const [sections, setSections] = useState([]);
   const [events, setEvents]     = useState([]);
@@ -512,14 +519,14 @@ export default function AdminCaseDetailPage() {
                   </>
                 ) : (
                   <>
-                    {!isAssignedToMe && (
+                    {!isAssignedToMe && canDo('cases.assign') && (
                       <button type="button" className="btn btn-secondary case-action-btn" onClick={handleAssign} disabled={saving}>
                         Assign to me
                       </button>
                     )}
 
                     {/* Status change control */}
-                    {availableNextStatuses.length > 0 && (
+                    {availableNextStatuses.length > 0 && canDo('cases.decide') && (
                       showStatusPanel ? (
                         <div className="case-action-panel">
                           <div className="case-action-panel-title">Change status</div>
@@ -570,7 +577,7 @@ export default function AdminCaseDetailPage() {
                     )}
 
                     <div className="case-actions-divider" />
-                    {['manager', 'tenant_admin'].includes(session.role) && (
+                    {['manager', 'tenant_admin'].includes(session.role) && canDo('cases.decide') && (
                       <button type="button" className="btn btn-danger case-action-btn" onClick={handleDelete} disabled={saving}>
                         Delete application
                       </button>

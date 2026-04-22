@@ -1,7 +1,7 @@
 import { getDb } from '../db/client.js';
 import { writeAuditLog } from '../lib/audit.js';
 import { serialiseApplicationForResponse } from '../lib/field-encryption.js';
-import { requireTenantStaff } from '../lib/guards.js';
+import { requireTenantStaffWithPermissions, hasPermission } from '../lib/guards.js';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -70,8 +70,9 @@ async function loadApplicationDecisions(sql, tenantId, applicationId) {
 }
 
 async function listApplications(request, env) {
-  const session = await requireTenantStaff(request, env, 'officer', 'manager');
+  const session = await requireTenantStaffWithPermissions(request, env, 'officer', 'manager', 'tenant_admin');
   if (!session) return error('Not authorised', 403);
+  if (!hasPermission(session, 'cases.view')) return error('Not authorised', 403);
 
   const url = new URL(request.url);
   const status = url.searchParams.get('status');
@@ -143,8 +144,9 @@ async function listApplications(request, env) {
 }
 
 async function getApplication(request, env, applicationId) {
-  const session = await requireTenantStaff(request, env, 'officer', 'manager');
+  const session = await requireTenantStaffWithPermissions(request, env, 'officer', 'manager', 'tenant_admin');
   if (!session) return error('Not authorised', 403);
+  if (!hasPermission(session, 'cases.view')) return error('Not authorised', 403);
 
   const sql = getDb(env);
   const application = await loadApplicationForTenant(sql, session.tenant_id, applicationId);
@@ -159,8 +161,9 @@ async function getApplication(request, env, applicationId) {
 }
 
 async function assignApplication(request, env, applicationId) {
-  const session = await requireTenantStaff(request, env, 'officer', 'manager');
+  const session = await requireTenantStaffWithPermissions(request, env, 'officer', 'manager', 'tenant_admin');
   if (!session) return error('Not authorised', 403);
+  if (!hasPermission(session, 'cases.assign')) return error('Not authorised', 403);
 
   let body;
   try {
@@ -233,8 +236,9 @@ async function assignApplication(request, env, applicationId) {
 }
 
 async function requestInformation(request, env, applicationId) {
-  const session = await requireTenantStaff(request, env, 'officer', 'manager');
+  const session = await requireTenantStaffWithPermissions(request, env, 'officer', 'manager', 'tenant_admin');
   if (!session) return error('Not authorised', 403);
+  if (!hasPermission(session, 'cases.decide')) return error('Not authorised', 403);
 
   let body;
   try {
@@ -295,8 +299,9 @@ async function requestInformation(request, env, applicationId) {
 }
 
 async function recordDecision(request, env, applicationId) {
-  const session = await requireTenantStaff(request, env, 'officer', 'manager');
+  const session = await requireTenantStaffWithPermissions(request, env, 'officer', 'manager', 'tenant_admin');
   if (!session) return error('Not authorised', 403);
+  if (!hasPermission(session, 'cases.decide')) return error('Not authorised', 403);
 
   let body;
   try {
@@ -361,8 +366,9 @@ async function recordDecision(request, env, applicationId) {
 }
 
 async function deleteApplication(request, env, applicationId) {
-  const session = await requireTenantStaff(request, env, 'officer', 'manager');
+  const session = await requireTenantStaffWithPermissions(request, env, 'officer', 'manager', 'tenant_admin');
   if (!session) return error('Not authorised', 403);
+  if (!hasPermission(session, 'cases.decide')) return error('Not authorised', 403);
 
   const sql = getDb(env);
   const application = await loadApplicationForTenant(sql, session.tenant_id, applicationId);
@@ -398,8 +404,9 @@ async function deleteApplication(request, env, applicationId) {
 }
 
 async function getQueueStats(request, env) {
-  const session = await requireTenantStaff(request, env, 'officer', 'manager');
+  const session = await requireTenantStaffWithPermissions(request, env, 'officer', 'manager', 'tenant_admin');
   if (!session) return error('Not authorised', 403);
+  if (!hasPermission(session, 'cases.view')) return error('Not authorised', 403);
 
   const sql = getDb(env);
   const rows = await sql`

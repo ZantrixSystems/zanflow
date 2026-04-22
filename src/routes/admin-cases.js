@@ -18,7 +18,7 @@
  */
 
 import { getDb } from '../db/client.js';
-import { requireTenantStaff } from '../lib/guards.js';
+import { requireTenantStaffWithPermissions, hasPermission } from '../lib/guards.js';
 import { writeAuditLog } from '../lib/audit.js';
 
 function json(data, status = 200) {
@@ -58,8 +58,9 @@ function parseFilters(url, session) {
 // GET /api/admin/cases
 // ---------------------------------------------------------------------------
 async function listCases(request, env) {
-  const session = await requireTenantStaff(request, env, 'officer', 'manager');
+  const session = await requireTenantStaffWithPermissions(request, env, 'officer', 'manager', 'tenant_admin');
   if (!session) return error('Not authorised', 403);
+  if (!hasPermission(session, 'cases.view')) return error('Not authorised', 403);
 
   const url = new URL(request.url);
   const f = parseFilters(url, session);
@@ -194,8 +195,9 @@ async function listCases(request, env) {
 // GET /api/admin/cases/stats
 // ---------------------------------------------------------------------------
 async function getCaseStats(request, env) {
-  const session = await requireTenantStaff(request, env, 'officer', 'manager');
+  const session = await requireTenantStaffWithPermissions(request, env, 'officer', 'manager', 'tenant_admin');
   if (!session) return error('Not authorised', 403);
+  if (!hasPermission(session, 'cases.view')) return error('Not authorised', 403);
 
   const sql = getDb(env);
   const tid = session.tenant_id;
@@ -264,7 +266,7 @@ function sanitiseFilterJson(raw) {
 }
 
 async function listSavedFilters(request, env) {
-  const session = await requireTenantStaff(request, env, 'officer', 'manager');
+  const session = await requireTenantStaffWithPermissions(request, env, 'officer', 'manager', 'tenant_admin');
   if (!session) return error('Not authorised', 403);
 
   const sql = getDb(env);
@@ -280,7 +282,7 @@ async function listSavedFilters(request, env) {
 }
 
 async function createSavedFilter(request, env) {
-  const session = await requireTenantStaff(request, env, 'officer', 'manager');
+  const session = await requireTenantStaffWithPermissions(request, env, 'officer', 'manager', 'tenant_admin');
   if (!session) return error('Not authorised', 403);
 
   let body;
@@ -315,7 +317,7 @@ async function createSavedFilter(request, env) {
 }
 
 async function updateSavedFilter(request, env, filterId) {
-  const session = await requireTenantStaff(request, env, 'officer', 'manager');
+  const session = await requireTenantStaffWithPermissions(request, env, 'officer', 'manager', 'tenant_admin');
   if (!session) return error('Not authorised', 403);
 
   let body;
@@ -364,7 +366,7 @@ async function updateSavedFilter(request, env, filterId) {
 }
 
 async function deleteSavedFilter(request, env, filterId) {
-  const session = await requireTenantStaff(request, env, 'officer', 'manager');
+  const session = await requireTenantStaffWithPermissions(request, env, 'officer', 'manager', 'tenant_admin');
   if (!session) return error('Not authorised', 403);
 
   const sql = getDb(env);
