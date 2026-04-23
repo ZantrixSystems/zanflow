@@ -5,13 +5,18 @@ import { useAuth } from '../auth-context.jsx';
 import Layout from '../components/Layout.jsx';
 import { buildApplicantNav } from '../lib/navigation.js';
 
-const VERIFICATION_STATE_LABELS = {
-  unverified: 'Not submitted',
-  pending_verification: 'Awaiting review',
-  verified: 'Verified',
-  verification_refused: 'Refused',
-  more_information_required: 'Info required',
+const VERIFICATION_STATE = {
+  unverified:                { label: 'Not submitted',     cls: 'vstate-unverified',    hint: 'Submit this premises for council verification before you can apply.' },
+  pending_verification:      { label: 'Awaiting review',   cls: 'vstate-pending',       hint: 'The council is reviewing your premises. We\'ll notify you when done.' },
+  verified:                  { label: 'Verified',          cls: 'vstate-verified',      hint: 'This premises is verified. You can start a licence application.' },
+  verification_refused:      { label: 'Refused',           cls: 'vstate-refused',       hint: 'The council could not verify this premises. See the details page for more information.' },
+  more_information_required: { label: 'Info required',     cls: 'vstate-info-required', hint: 'The council has asked for more information. Click to view and respond.' },
 };
+
+function VerificationBadge({ state }) {
+  const meta = VERIFICATION_STATE[state] ?? { label: state, cls: 'vstate-unverified' };
+  return <span className={`prem-badge ${meta.cls}`}>{meta.label}</span>;
+}
 
 export default function PremisesListPage() {
   const navigate = useNavigate();
@@ -30,8 +35,7 @@ export default function PremisesListPage() {
 
   async function handleDelete(event, premisesId) {
     event.preventDefault();
-    if (!window.confirm('Delete this premises record?')) return;
-
+    if (!window.confirm('Delete this premises record? This cannot be undone.')) return;
     setDeletingId(premisesId);
     setError('');
     try {
@@ -52,78 +56,75 @@ export default function PremisesListPage() {
       ]}
       navItems={buildApplicantNav(session)}
     >
-      <section className="form-section">
-        <div className="form-section-title">Your premises</div>
-        <h1 className="page-title">Manage your premises</h1>
-        <p className="page-subtitle">
-          Add each premises once. Once it is verified by the council, you can start licence applications against it.
-        </p>
-        <div className="platform-hero-actions" style={{ marginTop: 24 }}>
-          <Link className="btn btn-primary" to="/premises/new">Add premises</Link>
+      <div className="prem-list-header">
+        <div>
+          <h1 className="prem-list-title">Your premises</h1>
+          <p className="prem-list-subtitle">
+            Each premises must be verified before you can apply for a licence.
+          </p>
         </div>
-      </section>
+        <Link className="btn btn-primary" to="/premises/new">Add premises</Link>
+      </div>
 
       {error && <div className="alert alert-error">{error}</div>}
 
       {loading ? (
-        <div className="spinner">Loading...</div>
+        <div className="spinner">Loading…</div>
       ) : premises.length === 0 ? (
-        <section className="form-section">
-          <p className="empty-state">
-            You have not added any premises yet. Add your first premises to get started.
-          </p>
-          <div className="platform-hero-actions" style={{ marginTop: 16 }}>
-            <Link className="btn btn-primary" to="/premises/new">Add your first premises</Link>
-          </div>
-        </section>
+        <div className="prem-empty">
+          <div className="prem-empty-icon">🏢</div>
+          <div className="prem-empty-title">No premises yet</div>
+          <p className="prem-empty-hint">Add a premises to get started. Once the council verifies it, you can apply for a licence.</p>
+          <Link className="btn btn-primary" to="/premises/new">Add your first premises</Link>
+        </div>
       ) : (
-        <section className="form-section">
-          <div className="application-list">
-            {premises.map((row) => {
-              const isVerified = row.verification_state === 'verified';
-              return (
-                <Link key={row.id} to={`/premises/${row.id}`} className="application-row">
-                  <div className="application-row-main">
-                    <div className="application-row-title">{row.premises_name}</div>
-                    <div className="application-row-meta">
-                      {[row.address_line_1, row.town_or_city, row.postcode].filter(Boolean).join(' · ')}
-                    </div>
-                    <div className="application-row-meta">
-                      Applications: {row.application_count ?? 0}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <span className={`status-tag status-verification-${(row.verification_state ?? 'unverified').replace(/_/g, '-')}`}>
-                      {VERIFICATION_STATE_LABELS[row.verification_state] ?? row.verification_state}
-                    </span>
-                    <div className="dashboard-action-controls">
-                      {isVerified && (
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
-                          onClick={(event) => {
-                            event.preventDefault();
-                            navigate(`/apply?premises=${row.id}`);
-                          }}
-                        >
-                          Start application
-                        </button>
-                      )}
+        <div className="prem-grid">
+          {premises.map((row) => {
+            const vstate = row.verification_state ?? 'unverified';
+            const meta = VERIFICATION_STATE[vstate] ?? VERIFICATION_STATE.unverified;
+            const isVerified = vstate === 'verified';
+
+            return (
+              <Link key={row.id} to={`/premises/${row.id}`} className="prem-card">
+                <div className="prem-card-top">
+                  <div className="prem-card-name">{row.premises_name}</div>
+                  <VerificationBadge state={vstate} />
+                </div>
+
+                <div className="prem-card-address">
+                  {[row.address_line_1, row.town_or_city, row.postcode].filter(Boolean).join(', ')}
+                </div>
+
+                <div className="prem-card-hint">{meta.hint}</div>
+
+                <div className="prem-card-footer">
+                  <span className="prem-card-apps">
+                    {row.application_count ?? 0} application{row.application_count !== 1 ? 's' : ''}
+                  </span>
+                  <div className="prem-card-actions" onClick={(e) => e.preventDefault()}>
+                    {isVerified && (
                       <button
                         type="button"
-                        className="btn btn-danger btn-sm"
-                        onClick={(event) => handleDelete(event, row.id)}
-                        disabled={deletingId === row.id}
+                        className="btn btn-primary btn-sm"
+                        onClick={(e) => { e.preventDefault(); navigate(`/apply?premises=${row.id}`); }}
                       >
-                        {deletingId === row.id ? 'Deleting...' : 'Delete'}
+                        Start application
                       </button>
-                    </div>
+                    )}
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={(e) => handleDelete(e, row.id)}
+                      disabled={deletingId === row.id}
+                    >
+                      {deletingId === row.id ? 'Deleting…' : 'Delete'}
+                    </button>
                   </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       )}
     </Layout>
   );

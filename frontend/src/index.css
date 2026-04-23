@@ -1450,6 +1450,388 @@ body { min-height: 100vh; }
   align-items: center;
 }
 
+/* ============================================================
+   Premises list page — card grid
+   ============================================================ */
+
+.prem-list-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.prem-list-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 4px;
+}
+
+.prem-list-subtitle {
+  font-size: .875rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.prem-empty {
+  text-align: center;
+  padding: 60px 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.prem-empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+.prem-empty-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.prem-empty-hint {
+  font-size: .875rem;
+  color: var(--color-text-muted);
+  margin: 0 0 20px;
+  max-width: 380px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.prem-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.prem-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  cursor: pointer;
+}
+
+.prem-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.09);
+  border-color: var(--color-primary-container);
+}
+
+.prem-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.prem-card-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.3;
+}
+
+.prem-card-address {
+  font-size: .8125rem;
+  color: var(--color-text-muted);
+}
+
+.prem-card-hint {
+  font-size: .8rem;
+  color: var(--color-text-muted);
+  flex: 1;
+  line-height: 1.5;
+}
+
+.prem-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+.prem-card-apps {
+  font-size: .75rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.prem-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Premises verification badges */
+.prem-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vstate-unverified     { background: var(--color-surface-high);      color: var(--color-tag-draft); }
+.vstate-pending        { background: rgba(212,175,55,0.15);           color: var(--color-on-primary-container); }
+.vstate-verified       { background: var(--color-success-bg);         color: var(--color-success); }
+.vstate-refused        { background: var(--color-danger-bg);          color: var(--color-danger); }
+.vstate-info-required  { background: #fff7ed;                         color: #9a3412; }
+
+/* ============================================================
+   My Applications (Dashboard) page
+   ============================================================ */
+
+.appl-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.appl-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 4px;
+}
+
+.appl-page-subtitle {
+  font-size: .875rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.appl-empty {
+  text-align: center;
+  padding: 60px 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.appl-empty-icon  { font-size: 2.5rem; margin-bottom: 12px; }
+.appl-empty-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+.appl-empty-hint {
+  font-size: .875rem;
+  color: var(--color-text-muted);
+  margin: 0 auto 20px;
+  max-width: 380px;
+}
+
+.appl-premises-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.appl-premises-block {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* Premises header row */
+.appl-premises-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  flex-wrap: wrap;
+}
+
+.appl-premises-head-left { flex: 1; min-width: 0; }
+
+.appl-premises-name {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--color-text);
+  text-decoration: none;
+  display: block;
+  margin-bottom: 2px;
+  transition: color 0.15s;
+}
+
+.appl-premises-name:hover { color: var(--color-primary); }
+
+.appl-premises-address {
+  font-size: .8rem;
+  color: var(--color-text-muted);
+}
+
+.appl-premises-head-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+/* Cases area */
+.appl-cases-area {
+  border-top: 1px solid var(--color-border);
+}
+
+.appl-no-case {
+  padding: 14px 20px;
+  font-size: .8125rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* Individual case card */
+.appl-case-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  padding: 16px 20px;
+  transition: background 0.15s, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.appl-case-card:hover {
+  background: var(--color-surface-high);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+}
+
+.appl-case-card--action {
+  border-left: 3px solid var(--color-primary-container);
+}
+
+.appl-case-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.appl-case-card-sections {
+  font-size: .9375rem;
+  font-weight: 600;
+  color: var(--color-text);
+  flex: 1;
+  min-width: 0;
+}
+
+.appl-case-card-no-sections {
+  color: var(--color-text-muted);
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* Status badge */
+.appl-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.appl-status-draft     { background: var(--color-surface-high);      color: var(--color-tag-draft); }
+.appl-status-submitted { background: rgba(212,175,55,0.15);           color: var(--color-on-primary-container); }
+.appl-status-review    { background: #fef9c3;                         color: #854d0e; }
+.appl-status-returned  { background: #fff7ed;                         color: #9a3412; }
+.appl-status-info      { background: #fff7ed;                         color: #9a3412; }
+.appl-status-approved  { background: var(--color-success-bg);         color: var(--color-success); }
+.appl-status-refused   { background: var(--color-danger-bg);          color: var(--color-danger); }
+
+/* In-card notice strip */
+.appl-case-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: .8125rem;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.appl-case-notice--info    { background: rgba(59,130,246,0.07); color: #1e40af; }
+.appl-case-notice--pending { background: rgba(212,175,55,0.10); color: var(--color-on-primary-container); }
+.appl-case-notice--warning { background: #fff7ed;               color: #9a3412; }
+.appl-case-notice--success { background: var(--color-success-bg); color: var(--color-success); }
+.appl-case-notice--error   { background: var(--color-danger-bg);  color: var(--color-danger); }
+
+.appl-case-notice-cta {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Date meta row */
+.appl-case-meta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: .775rem;
+  color: var(--color-text-muted);
+}
+
+/* ============================================================
+   Mobile — applicant pages
+   ============================================================ */
+
+@media (max-width: 640px) {
+  .prem-grid { grid-template-columns: 1fr; }
+
+  .prem-list-header,
+  .appl-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .prem-list-header .btn,
+  .appl-page-header .btn { width: 100%; text-align: center; }
+
+  .appl-premises-head { flex-direction: column; }
+
+  .appl-premises-head-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .appl-premises-head-actions .btn { width: 100%; text-align: center; }
+
+  .appl-case-card-top { flex-direction: column; gap: 8px; }
+
+  .prem-card-footer { flex-direction: column; align-items: flex-start; }
+  .prem-card-actions { width: 100%; }
+  .prem-card-actions .btn { flex: 1; text-align: center; }
+}
+
 /* Status tags */
 .status-tag {
   display: inline-block;
