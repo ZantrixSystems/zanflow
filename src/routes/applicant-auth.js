@@ -28,6 +28,7 @@ import {
 import { writeAuditLog } from '../lib/audit.js';
 import { requireApplicant } from '../lib/guards.js';
 import { resolveTenant } from '../lib/tenant-resolver.js';
+import { checkLoginRateLimit, recordFailedLogin, clearEmailRateLimit, getClientIp } from '../lib/rate-limit.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -145,19 +146,33 @@ async function login(request, env) {
   const { email, password } = body;
   if (!email || !password) return error('Email and password are required');
 
+  const ip = getClientIp(request);
+  const normEmail = email.toLowerCase().trim();
+
+  const { limited, reason } = await checkLoginRateLimit(env.RATE_LIMIT, ip, normEmail, 'applicant');
+  if (limited) return error(reason, 429);
+
   const rows = await sql`
     SELECT id, email, full_name, phone, password_hash
     FROM applicant_accounts
     WHERE tenant_id = ${tenant.id}
-      AND email = ${email.toLowerCase().trim()}
+      AND email = ${normEmail}
   `;
 
   // Constant-time response regardless of whether account exists — prevents enumeration
-  if (rows.length === 0) return error('Invalid credentials', 401);
+  if (rows.length === 0) {
+    await recordFailedLogin(env.RATE_LIMIT, ip, normEmail, 'applicant');
+    return error('Invalid credentials', 401);
+  }
   const account = rows[0];
 
   const valid = await verifyPassword(password, account.password_hash);
-  if (!valid) return error('Invalid credentials', 401);
+  if (!valid) {
+    await recordFailedLogin(env.RATE_LIMIT, ip, normEmail, 'applicant');
+    return error('Invalid credentials', 401);
+  }
+
+  await clearEmailRateLimit(env.RATE_LIMIT, normEmail, 'applicant');
 
   const payload = {
     applicant_account_id: account.id,

@@ -23,6 +23,11 @@ not_found_handling = "single-page-application"
 [triggers]
 crons = ["0 2 * * *"]
 
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "78a88770233843d5ac64fe16db1bbdff"
+preview_id = "8a32da93d3204097ac33148a9e3ec155"
+
 # Secrets — set via CLI, never commit real values:
 #   npx wrangler secret put DATABASE_URL
 #   npx wrangler secret put JWT_SECRET

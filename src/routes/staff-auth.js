@@ -7,6 +7,7 @@ import { validateBootstrapPassword } from '../lib/password-policy.js';
 import { isPlatformHost } from '../lib/request-context.js';
 import { buildCookie, clearCookie, signSession } from '../lib/session.js';
 import { resolveTenant } from '../lib/tenant-resolver.js';
+import { checkLoginRateLimit, recordFailedLogin, clearEmailRateLimit, getClientIp } from '../lib/rate-limit.js';
 
 function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
@@ -39,6 +40,12 @@ async function login(request, env) {
     return error('Email address and password are required');
   }
 
+  const ip = getClientIp(request);
+  const normIdentifier = identifier.toLowerCase();
+
+  const { limited, reason } = await checkLoginRateLimit(env.RATE_LIMIT, ip, normIdentifier, 'staff');
+  if (limited) return error(reason, 429);
+
   const rows = await sql`
     SELECT
       u.id,
@@ -53,17 +60,25 @@ async function login(request, env) {
     INNER JOIN users u ON u.id = m.user_id
     WHERE m.tenant_id = ${tenant.id}
       AND (
-        u.email = ${identifier.toLowerCase()}
-        OR LOWER(COALESCE(u.username, '')) = ${identifier.toLowerCase()}
+        u.email = ${normIdentifier}
+        OR LOWER(COALESCE(u.username, '')) = ${normIdentifier}
       )
     LIMIT 1
   `;
 
-  if (rows.length === 0) return error('Invalid credentials', 401);
+  if (rows.length === 0) {
+    await recordFailedLogin(env.RATE_LIMIT, ip, normIdentifier, 'staff');
+    return error('Invalid credentials', 401);
+  }
   const user = rows[0];
 
   const valid = await verifyPassword(password, user.password_hash);
-  if (!valid) return error('Invalid credentials', 401);
+  if (!valid) {
+    await recordFailedLogin(env.RATE_LIMIT, ip, normIdentifier, 'staff');
+    return error('Invalid credentials', 401);
+  }
+
+  await clearEmailRateLimit(env.RATE_LIMIT, normIdentifier, 'staff');
 
   const token = await signSession({
     user_id: user.id,

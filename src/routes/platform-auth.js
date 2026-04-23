@@ -8,6 +8,7 @@ import { isApexHost, isPlatformHost } from '../lib/request-context.js';
 import { validateSubdomain } from '../lib/subdomains.js';
 import { buildCookie, clearCookie, signSession } from '../lib/session.js';
 import { handleCouncilLookup } from '../lib/council-lookup.js';
+import { checkLoginRateLimit, recordFailedLogin, clearEmailRateLimit, getClientIp } from '../lib/rate-limit.js';
 
 function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
@@ -283,23 +284,37 @@ async function login(request, env) {
     return error('Email address and password are required');
   }
 
+  const ip = getClientIp(request);
+  const normIdentifier = identifier.toLowerCase();
+
+  const { limited, reason } = await checkLoginRateLimit(env.RATE_LIMIT, ip, normIdentifier, 'platform');
+  if (limited) return error(reason, 429);
+
   const sql = getDb(env);
   const rows = await sql`
     SELECT id, email, username, full_name, password_hash, is_platform_admin
     FROM users
     WHERE is_platform_admin = true
       AND (
-        email = ${identifier.toLowerCase()}
-        OR LOWER(COALESCE(username, '')) = ${identifier.toLowerCase()}
+        email = ${normIdentifier}
+        OR LOWER(COALESCE(username, '')) = ${normIdentifier}
       )
     LIMIT 1
   `;
 
-  if (rows.length === 0) return error('Invalid credentials', 401);
+  if (rows.length === 0) {
+    await recordFailedLogin(env.RATE_LIMIT, ip, normIdentifier, 'platform');
+    return error('Invalid credentials', 401);
+  }
   const user = rows[0];
 
   const valid = await verifyPassword(password, user.password_hash);
-  if (!valid) return error('Invalid credentials', 401);
+  if (!valid) {
+    await recordFailedLogin(env.RATE_LIMIT, ip, normIdentifier, 'platform');
+    return error('Invalid credentials', 401);
+  }
+
+  await clearEmailRateLimit(env.RATE_LIMIT, normIdentifier, 'platform');
 
   const token = await signSession({
     user_id: user.id,
