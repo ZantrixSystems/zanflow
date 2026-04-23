@@ -181,6 +181,10 @@ export const api = {
   deleteLicenceSection: (id) => request('DELETE', `/api/admin/licence-sections/${id}`),
 
   staffLogin: (body) => request('POST', '/api/staff/login', body),
+  staffMfaVerify: (body) => request('POST', '/api/staff/mfa/verify', body),
+  staffMfaEnrol: () => request('POST', '/api/staff/mfa/enrol', {}),
+  staffMfaConfirm: (body) => request('POST', '/api/staff/mfa/confirm', body),
+  staffMfaDisable: (body) => request('POST', '/api/staff/mfa/disable', body),
   staffBootstrapExchange: (body) => request('POST', '/api/staff/bootstrap-exchange', body),
   staffLogout: () => request('POST', '/api/staff/logout'),
   staffMe: () => request('GET', '/api/staff/me'),

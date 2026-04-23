@@ -8,6 +8,7 @@ import { isPlatformHost } from '../lib/request-context.js';
 import { buildCookie, clearCookie, signSession } from '../lib/session.js';
 import { resolveTenant } from '../lib/tenant-resolver.js';
 import { checkLoginRateLimit, recordFailedLogin, clearEmailRateLimit, getClientIp } from '../lib/rate-limit.js';
+import { signMfaPending, buildMfaPendingCookie } from '../lib/mfa-pending.js';
 
 function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
@@ -53,6 +54,8 @@ async function login(request, env) {
       u.username,
       u.full_name,
       u.password_hash,
+      u.totp_secret,
+      u.totp_enabled,
       u.is_platform_admin,
       m.role,
       m.tenant_id
@@ -80,7 +83,7 @@ async function login(request, env) {
 
   await clearEmailRateLimit(env.RATE_LIMIT, normIdentifier, 'staff');
 
-  const token = await signSession({
+  const sessionPayload = {
     user_id: user.id,
     email: user.email,
     username: user.username,
@@ -89,7 +92,27 @@ async function login(request, env) {
     tenant_id: tenant.id,
     tenant_slug: tenant.slug,
     role: user.role,
-  }, env.JWT_SECRET);
+  };
+
+  if (user.totp_enabled && user.totp_secret) {
+    if (!env.TOTP_ENCRYPTION_KEY) {
+      return error('MFA is not configured on this server', 503);
+    }
+
+    const pendingToken = await signMfaPending({
+      user_id: user.id,
+      sessionPayload,
+    }, env.JWT_SECRET);
+
+    return json({
+      mfa_required: true,
+      method: 'totp',
+    }, 200, {
+      'Set-Cookie': buildMfaPendingCookie(pendingToken),
+    });
+  }
+
+  const token = await signSession(sessionPayload, env.JWT_SECRET);
 
   return json({
     user: {
@@ -264,6 +287,7 @@ async function getProfile(request, env) {
       u.full_name,
       u.username,
       (u.password_hash IS NOT NULL) AS has_password,
+      u.totp_enabled,
       t.name AS tenant_name,
       t.subdomain AS tenant_subdomain
     FROM users u
@@ -283,6 +307,7 @@ async function getProfile(request, env) {
       username: user.username,
       role: session.role,
       has_password: user.has_password,
+      mfa_enabled: user.totp_enabled,
       tenant_name: user.tenant_name,
       tenant_subdomain: user.tenant_subdomain,
     },
@@ -329,13 +354,13 @@ async function updateProfile(request, env) {
     const newHash = await hashPassword(body.new_password);
     await sql`
       UPDATE users
-      SET full_name = ${newName}, password_hash = ${newHash}, updated_at = NOW()
+      SET full_name = ${newName}, password_hash = ${newHash}
       WHERE id = ${session.user_id}
     `;
   } else {
     await sql`
       UPDATE users
-      SET full_name = ${newName}, updated_at = NOW()
+      SET full_name = ${newName}
       WHERE id = ${session.user_id}
     `;
   }

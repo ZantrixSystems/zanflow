@@ -35,6 +35,8 @@ Define the intended MVP behaviour for tenant onboarding, break-glass admin issua
 - Applicant registration and sign-in remain tenant-scoped
 - Tenant staff sign in through `/api/staff/login` and must belong to the tenant resolved from the host
 - Staff local-auth sign-in uses the email address as the single identifier; the runtime must not require a separate username field
+- Staff accounts may enable TOTP MFA; when enabled, `/api/staff/login` completes password verification first, then requires a second code step before issuing the full session cookie
+- The interim MFA handoff must use a short-lived HttpOnly cookie and must not issue a full staff session until the TOTP code is verified
 - Self-service tenant bootstrap starts on `zanflo.com`, provisions the tenant, then completes first sign-in on `<tenant>.zanflo.com/admin/bootstrap`
 - The bootstrap exchange page (`TenantBootstrapExchangePage`) enforces a minimum 7-second display to communicate workspace provisioning to the new tenant admin; it reads the token directly from `window.location.search` (not React Router) and navigates via `window.location.replace` (not React Router navigate) to avoid a race with the tenant availability check in `App.jsx`
 - On successful bootstrap exchange the user always lands on `/admin/dashboard`

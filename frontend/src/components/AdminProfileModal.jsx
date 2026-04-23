@@ -12,10 +12,22 @@ export default function AdminProfileModal({ onClose, onSessionRefresh }) {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState({ full_name: '', current_password: '', new_password: '', new_password_confirmation: '' });
+  const [mfaSetup, setMfaSetup] = useState(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaDisableForm, setMfaDisableForm] = useState({ password: '', code: '' });
+  const [showDisable, setShowDisable] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [mfaSaving, setMfaSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const overlayRef = useRef(null);
+
+  async function loadProfile() {
+    const data = await api.getStaffProfile();
+    setProfile(data.profile);
+    setForm((f) => ({ ...f, full_name: data.profile.full_name }));
+    return data.profile;
+  }
 
   useEffect(() => {
     api.getStaffProfile()
@@ -55,6 +67,58 @@ export default function AdminProfileModal({ onClose, onSessionRefresh }) {
       setError(err.message || 'Could not update profile.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleStartMfa() {
+    setMfaSaving(true);
+    setError('');
+    setNotice('');
+    try {
+      const data = await api.staffMfaEnrol();
+      setMfaSetup(data);
+      setMfaCode('');
+      setShowDisable(false);
+    } catch (err) {
+      setError(err.message || 'Could not start MFA setup.');
+    } finally {
+      setMfaSaving(false);
+    }
+  }
+
+  async function handleConfirmMfa(e) {
+    e.preventDefault();
+    setMfaSaving(true);
+    setError('');
+    setNotice('');
+    try {
+      await api.staffMfaConfirm({ code: mfaCode });
+      await loadProfile();
+      setMfaSetup(null);
+      setMfaCode('');
+      setNotice('Multi-factor authentication is now enabled.');
+    } catch (err) {
+      setError(err.message || 'Could not confirm MFA.');
+    } finally {
+      setMfaSaving(false);
+    }
+  }
+
+  async function handleDisableMfa(e) {
+    e.preventDefault();
+    setMfaSaving(true);
+    setError('');
+    setNotice('');
+    try {
+      await api.staffMfaDisable(mfaDisableForm);
+      await loadProfile();
+      setShowDisable(false);
+      setMfaDisableForm({ password: '', code: '' });
+      setNotice('Multi-factor authentication has been disabled.');
+    } catch (err) {
+      setError(err.message || 'Could not disable MFA.');
+    } finally {
+      setMfaSaving(false);
     }
   }
 
@@ -105,6 +169,12 @@ export default function AdminProfileModal({ onClose, onSessionRefresh }) {
                   <div className="profile-detail-row">
                     <span className="profile-detail-label">Site</span>
                     <span className="profile-detail-value">{profile.tenant_subdomain}.zanflo.com</span>
+                  </div>
+                )}
+                {profile?.has_password && (
+                  <div className="profile-detail-row">
+                    <span className="profile-detail-label">MFA</span>
+                    <span className="profile-detail-value">{profile?.mfa_enabled ? 'Enabled' : 'Not enabled'}</span>
                   </div>
                 )}
               </div>
@@ -159,6 +229,146 @@ export default function AdminProfileModal({ onClose, onSessionRefresh }) {
                   </button>
                 </div>
               </form>
+            )}
+
+            {!isEditing && profile?.has_password && (
+              <div className="profile-mfa-section">
+                <div className="profile-section-label">Multi-factor authentication</div>
+                {!profile?.mfa_enabled && !mfaSetup && (
+                  <div className="profile-mfa-panel">
+                    <p className="profile-mfa-copy">
+                      Add an authenticator app code to protect your staff account.
+                    </p>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={handleStartMfa} disabled={mfaSaving}>
+                      {mfaSaving ? 'Starting...' : 'Set up MFA'}
+                    </button>
+                  </div>
+                )}
+
+                {!profile?.mfa_enabled && mfaSetup && (
+                  <div className="profile-mfa-panel">
+                    <p className="profile-mfa-copy">
+                      Add this key to your authenticator app, then enter the first 6-digit code to switch MFA on.
+                    </p>
+                    <div className="profile-mfa-secret">{mfaSetup.secret}</div>
+                    <label className="profile-mfa-label" htmlFor="mfa-uri">Setup URI</label>
+                    <textarea
+                      id="mfa-uri"
+                      className="profile-mfa-uri"
+                      value={mfaSetup.uri}
+                      readOnly
+                      rows={3}
+                    />
+                    <form onSubmit={handleConfirmMfa}>
+                      <div className="form-group">
+                        <label htmlFor="mfa-confirm-code">Authenticator code</label>
+                        <input
+                          id="mfa-confirm-code"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={mfaCode}
+                          onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          placeholder="123456"
+                          autoComplete="one-time-code"
+                          required
+                        />
+                      </div>
+                      <div className="profile-edit-actions">
+                        <button type="submit" className="btn btn-primary btn-sm" disabled={mfaSaving || mfaCode.length !== 6}>
+                          {mfaSaving ? 'Confirming...' : 'Confirm MFA'}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => {
+                            setMfaSetup(null);
+                            setMfaCode('');
+                            setError('');
+                          }}
+                          disabled={mfaSaving}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {profile?.mfa_enabled && !showDisable && (
+                  <div className="profile-mfa-panel">
+                    <p className="profile-mfa-copy">
+                      Your account currently requires an authenticator code at sign in.
+                    </p>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setShowDisable(true);
+                        setMfaSetup(null);
+                        setError('');
+                        setNotice('');
+                      }}
+                    >
+                      Disable MFA
+                    </button>
+                  </div>
+                )}
+
+                {profile?.mfa_enabled && showDisable && (
+                  <div className="profile-mfa-panel">
+                    <p className="profile-mfa-copy">
+                      To disable MFA, confirm your current password and a fresh authenticator code.
+                    </p>
+                    <form onSubmit={handleDisableMfa}>
+                      <div className="form-group">
+                        <label htmlFor="mfa-disable-password">Current password</label>
+                        <input
+                          id="mfa-disable-password"
+                          type="password"
+                          value={mfaDisableForm.password}
+                          onChange={(e) => setMfaDisableForm((f) => ({ ...f, password: e.target.value }))}
+                          autoComplete="current-password"
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label htmlFor="mfa-disable-code">Authenticator code</label>
+                        <input
+                          id="mfa-disable-code"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={mfaDisableForm.code}
+                          onChange={(e) => setMfaDisableForm((f) => ({ ...f, code: e.target.value.replace(/\D/g, '').slice(0, 6) }))}
+                          placeholder="123456"
+                          autoComplete="one-time-code"
+                          required
+                        />
+                      </div>
+                      <div className="profile-edit-actions">
+                        <button
+                          type="submit"
+                          className="btn btn-primary btn-sm"
+                          disabled={mfaSaving || !mfaDisableForm.password || mfaDisableForm.code.length !== 6}
+                        >
+                          {mfaSaving ? 'Disabling...' : 'Confirm disable'}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => {
+                            setShowDisable(false);
+                            setMfaDisableForm({ password: '', code: '' });
+                            setError('');
+                          }}
+                          disabled={mfaSaving}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+              </div>
             )}
 
             {!isEditing && profile?.has_password && (

@@ -41,6 +41,7 @@ import { handlePlatformAuthRoutes }    from './routes/platform-auth.js';
 import { handlePlatformAdminRoutes }   from './routes/platform-admin.js';
 import { handlePremisesRoutes }        from './routes/premises.js';
 import { handleStaffAuthRoutes }       from './routes/staff-auth.js';
+import { handleStaffMfaRoutes }        from './routes/staff-mfa.js';
 import { handleTenantPublicRoutes }    from './routes/tenant-public.js';
 import { getDb }                       from './db/client.js';
 import { isTenantHost }                from './lib/request-context.js';
@@ -293,6 +294,7 @@ export default {
     try {
       const response =
         (await handleApplicantAuthRoutes(request, env))        ??
+        (await handleStaffMfaRoutes(request, env))             ??
         (await handleStaffAuthRoutes(request, env))            ??
         (await handlePlatformAuthRoutes(request, env))         ??
         (await handleApplicationTypeRoutes(request, env))      ??

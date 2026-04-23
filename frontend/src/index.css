@@ -558,6 +558,52 @@ body { min-height: 100vh; }
   margin-top: 16px;
 }
 
+.profile-mfa-section {
+  padding: 0 18px 16px;
+}
+
+.profile-mfa-panel {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-low);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+.profile-mfa-copy {
+  font-size: .8125rem;
+  color: var(--color-text-muted);
+}
+
+.profile-mfa-secret {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: .875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  word-break: break-all;
+}
+
+.profile-mfa-label {
+  display: block;
+  margin: 12px 0 6px;
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.profile-mfa-uri {
+  width: 100%;
+  resize: vertical;
+  min-height: 72px;
+  margin-bottom: 12px;
+}
+
 .admin-body {
   flex: 1;
   display: flex;
