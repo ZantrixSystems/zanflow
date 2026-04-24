@@ -9,6 +9,7 @@ import { validateSubdomain } from '../lib/subdomains.js';
 import { buildCookie, clearCookie, signSession } from '../lib/session.js';
 import { handleCouncilLookup } from '../lib/council-lookup.js';
 import { checkLoginRateLimit, recordFailedLogin, clearEmailRateLimit, getClientIp } from '../lib/rate-limit.js';
+import { signMfaPending, buildMfaPendingCookie } from '../lib/mfa-pending.js';
 
 function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
@@ -40,6 +41,9 @@ function buildTenantDefaults(name, adminName, adminEmail) {
 
 async function signup(request, env) {
   if (!isApexHost(request)) return error('Not found', 404);
+  if (env.APP_ENV === 'production' && env.ALLOW_SELF_SERVICE_SIGNUP !== 'true') {
+    return error('Self-service signup is not available.', 404);
+  }
 
   let body;
   try {
@@ -292,7 +296,7 @@ async function login(request, env) {
 
   const sql = getDb(env);
   const rows = await sql`
-    SELECT id, email, username, full_name, password_hash, is_platform_admin
+    SELECT id, email, username, full_name, password_hash, is_platform_admin, totp_secret, totp_enabled
     FROM users
     WHERE is_platform_admin = true
       AND (
@@ -316,7 +320,7 @@ async function login(request, env) {
 
   await clearEmailRateLimit(env.RATE_LIMIT, normIdentifier, 'platform');
 
-  const token = await signSession({
+  const sessionPayload = {
     user_id: user.id,
     email: user.email,
     username: user.username,
@@ -325,7 +329,27 @@ async function login(request, env) {
     tenant_id: null,
     tenant_slug: null,
     role: null,
-  }, env.JWT_SECRET);
+  };
+
+  if (user.totp_enabled && user.totp_secret) {
+    if (!env.TOTP_ENCRYPTION_KEY) {
+      return error('MFA is not configured on this server', 503);
+    }
+
+    const pendingToken = await signMfaPending({
+      user_id: user.id,
+      sessionPayload,
+    }, env.JWT_SECRET);
+
+    return json({
+      mfa_required: true,
+      method: 'totp',
+    }, 200, {
+      'Set-Cookie': buildMfaPendingCookie(pendingToken),
+    });
+  }
+
+  const token = await signSession(sessionPayload, env.JWT_SECRET);
 
   return json({
     user: {

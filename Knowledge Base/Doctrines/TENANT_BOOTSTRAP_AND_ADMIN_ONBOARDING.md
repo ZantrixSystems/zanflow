@@ -36,8 +36,12 @@ Define the intended MVP behaviour for tenant onboarding, break-glass admin issua
 - Tenant staff sign in through `/api/staff/login` and must belong to the tenant resolved from the host
 - Staff local-auth sign-in uses the email address as the single identifier; the runtime must not require a separate username field
 - Staff accounts may enable TOTP MFA; when enabled, `/api/staff/login` completes password verification first, then requires a second code step before issuing the full session cookie
+- Platform admin accounts follow the same TOTP MFA model on `/api/platform/login`; when MFA is enabled, password verification must complete first and the full platform session cookie must not be issued until the second code step succeeds
 - The interim MFA handoff must use a short-lived HttpOnly cookie and must not issue a full staff session until the TOTP code is verified
+- MFA state-changing and verification endpoints must enforce the same CSRF header rule used by other mutating authenticated routes
+- TOTP confirmation and verification attempts must be rate-limited server-side to reduce brute-force risk
 - Self-service tenant bootstrap starts on `zanflo.com`, provisions the tenant, then completes first sign-in on `<tenant>.zanflo.com/admin/bootstrap`
+- Self-service tenant signup is a demo-only exception and must be disabled by default in production unless `ALLOW_SELF_SERVICE_SIGNUP=true` is explicitly set
 - The bootstrap exchange page (`TenantBootstrapExchangePage`) enforces a minimum 7-second display to communicate workspace provisioning to the new tenant admin; it reads the token directly from `window.location.search` (not React Router) and navigates via `window.location.replace` (not React Router navigate) to avoid a race with the tenant availability check in `App.jsx`
 - On successful bootstrap exchange the user always lands on `/admin/dashboard`
 - The step-advance timers and progress bar are intentional UX — they run regardless of API response time and must not be cancelled on success

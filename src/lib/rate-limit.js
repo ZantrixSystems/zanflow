@@ -82,6 +82,42 @@ export async function clearEmailRateLimit(kv, email, namespace = 'default') {
   await kv.delete(`rl:${namespace}:email:${email.toLowerCase()}`);
 }
 
+export async function checkActionRateLimit(kv, key, {
+  max = 5,
+  windowSecs = 900,
+  namespace = 'action',
+  message = 'Too many attempts. Please try again later.',
+} = {}) {
+  if (!kv) return { limited: false };
+
+  const rlKey = `rl:${namespace}:${key}`;
+  const raw = await kv.get(rlKey);
+  const count = raw ? parseInt(raw, 10) : 0;
+
+  if (count >= max) {
+    return { limited: true, reason: message };
+  }
+
+  return { limited: false, count, key: rlKey, windowSecs };
+}
+
+export async function recordActionFailure(kv, key, {
+  windowSecs = 900,
+  namespace = 'action',
+} = {}) {
+  if (!kv) return;
+
+  const rlKey = `rl:${namespace}:${key}`;
+  const raw = await kv.get(rlKey);
+  const count = raw ? parseInt(raw, 10) : 0;
+  await kv.put(rlKey, String(count + 1), { expirationTtl: windowSecs });
+}
+
+export async function clearActionRateLimit(kv, key, namespace = 'action') {
+  if (!kv) return;
+  await kv.delete(`rl:${namespace}:${key}`);
+}
+
 /**
  * Extract the real client IP from a Cloudflare Workers request.
  * CF-Connecting-IP is set by Cloudflare and cannot be spoofed by clients.

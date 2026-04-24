@@ -8,6 +8,9 @@ import {
   createTenantFixture,
 } from '../helpers/fixtures.js';
 import { fetchWorker, getCookie, readJson } from '../helpers/requests.js';
+import { encryptTotpSecret } from '../../src/lib/totp.js';
+
+const TEST_TOTP_KEY = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
 
 describe('slice 1 - auth foundation', () => {
   beforeEach(async () => {
@@ -106,6 +109,42 @@ describe('slice 1 - auth foundation', () => {
     expect(getCookie(response, 'session')).toBeTruthy();
   });
 
+  it('requires MFA challenge for platform admin when TOTP is enabled', async () => {
+    const admin = await createStaffFixture({
+      isPlatformAdmin: true,
+      tenantId: null,
+      email: 'platform-mfa-admin@test-zanflo.test',
+    });
+    const encryptedSecret = await encryptTotpSecret('JBSWY3DPEHPK3PXP', TEST_TOTP_KEY);
+    const pool = createTestPool();
+    const client = await pool.connect();
+    try {
+      await client.query(
+        `UPDATE users SET totp_secret = $1, totp_enabled = TRUE WHERE id = $2`,
+        [encryptedSecret, admin.id],
+      );
+    } finally {
+      client.release();
+      await pool.end();
+    }
+
+    const response = await fetchWorker('https://example.test/api/platform/login', {
+      method: 'POST',
+      host: 'platform.zanflo.com',
+      envOverrides: { TOTP_ENCRYPTION_KEY: TEST_TOTP_KEY },
+      body: {
+        identifier: admin.email,
+        password: admin.password,
+      },
+    });
+
+    expect(response.status).toBe(200);
+    expect(getCookie(response, 'session')).toBeFalsy();
+    expect(getCookie(response, 'mfa_pending')).toBeTruthy();
+    const json = await readJson(response);
+    expect(json).toEqual({ mfa_required: true, method: 'totp' });
+  });
+
   it('rejects platform login on a tenant host', async () => {
     const tenant = await createTenantFixture({ slug: 'test-platform-tenant-host' });
     const admin = await createStaffFixture({
@@ -124,6 +163,31 @@ describe('slice 1 - auth foundation', () => {
     });
 
     expect(response.status).toBe(404);
+  });
+
+  it('rejects MFA enrolment without the CSRF request header', async () => {
+    const tenant = await createTenantFixture({ slug: 'test-mfa-csrf' });
+    const staff = await createStaffFixture({ tenantId: tenant.id, role: 'officer' });
+
+    const loginResponse = await fetchWorker('https://example.test/api/staff/login', {
+      method: 'POST',
+      host: `${tenant.slug}.zanflo.com`,
+      body: {
+        identifier: staff.email,
+        password: staff.password,
+      },
+    });
+    const sessionCookie = getCookie(loginResponse, 'session');
+
+    const response = await fetchWorker('https://example.test/api/staff/mfa/enrol', {
+      method: 'POST',
+      host: `${tenant.slug}.zanflo.com`,
+      cookie: sessionCookie,
+      envOverrides: { TOTP_ENCRYPTION_KEY: TEST_TOTP_KEY },
+      body: {},
+    });
+
+    expect(response.status).toBe(401);
   });
 
   it('rejects platform login on the apex host', async () => {

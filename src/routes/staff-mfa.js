@@ -9,9 +9,15 @@
  */
 
 import { getDb } from '../db/client.js';
-import { requireStaff } from '../lib/guards.js';
+import { csrfSafe, requireStaff } from '../lib/guards.js';
 import { verifyPassword } from '../lib/passwords.js';
 import { writeAuditLog } from '../lib/audit.js';
+import {
+  checkActionRateLimit,
+  clearActionRateLimit,
+  getClientIp,
+  recordActionFailure,
+} from '../lib/rate-limit.js';
 import {
   generateTotpSecret,
   buildOtpAuthUri,
@@ -33,12 +39,40 @@ function error(msg, status = 400) {
   return json({ error: msg }, status);
 }
 
+const MFA_MAX_ATTEMPTS = 5;
+const MFA_WINDOW_SECS = 300;
+
+function mfaLimitKey(request, userId, scope) {
+  return `${scope}:${userId}:${getClientIp(request)}`;
+}
+
+async function checkMfaLimit(request, env, userId, scope) {
+  return checkActionRateLimit(env.RATE_LIMIT, mfaLimitKey(request, userId, scope), {
+    max: MFA_MAX_ATTEMPTS,
+    windowSecs: MFA_WINDOW_SECS,
+    namespace: 'mfa',
+    message: 'Too many MFA attempts. Please wait 5 minutes and try again.',
+  });
+}
+
+async function recordMfaFailure(request, env, userId, scope) {
+  return recordActionFailure(env.RATE_LIMIT, mfaLimitKey(request, userId, scope), {
+    windowSecs: MFA_WINDOW_SECS,
+    namespace: 'mfa',
+  });
+}
+
+async function clearMfaLimit(request, env, userId, scope) {
+  return clearActionRateLimit(env.RATE_LIMIT, mfaLimitKey(request, userId, scope), 'mfa');
+}
+
 // ---------------------------------------------------------------------------
 // POST /api/staff/mfa/enrol
 // Generates a new TOTP secret and returns the otpauth:// URI for QR display.
 // Does NOT activate MFA — user must confirm a code first via /confirm.
 // ---------------------------------------------------------------------------
 async function enrol(request, env) {
+  if (!csrfSafe(request)) return error('Not authenticated', 401);
   const session = await requireStaff(request, env);
   if (!session) return error('Not authenticated', 401);
 
@@ -86,6 +120,7 @@ async function enrol(request, env) {
 // Verifies the first TOTP code and sets totp_enabled = true.
 // ---------------------------------------------------------------------------
 async function confirm(request, env) {
+  if (!csrfSafe(request)) return error('Not authenticated', 401);
   const session = await requireStaff(request, env);
   if (!session) return error('Not authenticated', 401);
 
@@ -109,9 +144,15 @@ async function confirm(request, env) {
   if (!user.totp_secret) return error('No MFA setup in progress. Start enrolment first.', 409);
   if (user.totp_enabled) return error('MFA is already enabled.', 409);
 
+  const limit = await checkMfaLimit(request, env, session.user_id, 'confirm');
+  if (limit.limited) return error(limit.reason, 429);
+
   const plainSecret = await decryptTotpSecret(user.totp_secret, env.TOTP_ENCRYPTION_KEY);
   const valid = await verifyTotp(plainSecret, code);
-  if (!valid) return error('Incorrect code. Check your authenticator app and try again.', 401);
+  if (!valid) {
+    await recordMfaFailure(request, env, session.user_id, 'confirm');
+    return error('Incorrect code. Check your authenticator app and try again.', 401);
+  }
 
   await sql`
     UPDATE users
@@ -128,6 +169,8 @@ async function confirm(request, env) {
     recordId:   session.user_id,
   });
 
+  await clearMfaLimit(request, env, session.user_id, 'confirm');
+
   return json({ ok: true });
 }
 
@@ -137,6 +180,7 @@ async function confirm(request, env) {
 // Requires both current password and a valid TOTP code.
 // ---------------------------------------------------------------------------
 async function disable(request, env) {
+  if (!csrfSafe(request)) return error('Not authenticated', 401);
   const session = await requireStaff(request, env);
   if (!session) return error('Not authenticated', 401);
 
@@ -159,12 +203,21 @@ async function disable(request, env) {
   if (!user) return error('User not found', 404);
   if (!user.totp_enabled) return error('MFA is not enabled.', 409);
 
+  const limit = await checkMfaLimit(request, env, session.user_id, 'disable');
+  if (limit.limited) return error(limit.reason, 429);
+
   const pwValid = await verifyPassword(password, user.password_hash);
-  if (!pwValid) return error('Incorrect password.', 401);
+  if (!pwValid) {
+    await recordMfaFailure(request, env, session.user_id, 'disable');
+    return error('Incorrect password.', 401);
+  }
 
   const plainSecret = await decryptTotpSecret(user.totp_secret, env.TOTP_ENCRYPTION_KEY);
   const codeValid = await verifyTotp(plainSecret, code.trim().replace(/\s/g, ''));
-  if (!codeValid) return error('Incorrect authenticator code.', 401);
+  if (!codeValid) {
+    await recordMfaFailure(request, env, session.user_id, 'disable');
+    return error('Incorrect authenticator code.', 401);
+  }
 
   await sql`
     UPDATE users
@@ -181,6 +234,8 @@ async function disable(request, env) {
     recordId:   session.user_id,
   });
 
+  await clearMfaLimit(request, env, session.user_id, 'disable');
+
   return json({ ok: true });
 }
 
@@ -190,6 +245,7 @@ async function disable(request, env) {
 // Reads the mfa_pending cookie, verifies the TOTP code, issues a full session.
 // ---------------------------------------------------------------------------
 async function verify(request, env) {
+  if (!csrfSafe(request)) return error('MFA session expired or invalid. Please log in again.', 401);
   if (!env.TOTP_ENCRYPTION_KEY) return error('MFA not configured on this server', 503);
 
   const pending = await verifyMfaPending(request, env);
@@ -213,20 +269,29 @@ async function verify(request, env) {
     return error('MFA not configured for this account.', 401);
   }
 
+  const limit = await checkMfaLimit(request, env, pending.user_id, 'verify');
+  if (limit.limited) return error(limit.reason, 429);
+
   const plainSecret = await decryptTotpSecret(user.totp_secret, env.TOTP_ENCRYPTION_KEY);
   const valid = await verifyTotp(plainSecret, code);
-  if (!valid) return error('Incorrect code. Try again.', 401);
+  if (!valid) {
+    await recordMfaFailure(request, env, pending.user_id, 'verify');
+    return error('Incorrect code. Try again.', 401);
+  }
 
   const token = await signSession(pending.sessionPayload, env.JWT_SECRET);
+  const isPlatformAdmin = Boolean(pending.sessionPayload.is_platform_admin);
 
   await writeAuditLog(sql, {
     tenantId:   pending.sessionPayload.tenant_id,
-    actorType:  pending.sessionPayload.role,
+    actorType:  isPlatformAdmin ? 'platform_admin' : pending.sessionPayload.role,
     actorId:    pending.user_id,
-    action:     'staff.login_mfa_verified',
+    action:     isPlatformAdmin ? 'platform_admin.login_mfa_verified' : 'staff.login_mfa_verified',
     recordType: 'user',
     recordId:   pending.user_id,
   });
+
+  await clearMfaLimit(request, env, pending.user_id, 'verify');
 
   const headers = new Headers({ 'Content-Type': 'application/json' });
   headers.append('Set-Cookie', buildCookie(token));
@@ -249,6 +314,7 @@ export async function handleStaffMfaRoutes(request, env) {
   if (method === 'POST' && url.pathname === '/api/staff/mfa/confirm') return confirm(request, env);
   if (method === 'POST' && url.pathname === '/api/staff/mfa/disable') return disable(request, env);
   if (method === 'POST' && url.pathname === '/api/staff/mfa/verify')  return verify(request, env);
+  if (method === 'POST' && url.pathname === '/api/platform/mfa/verify') return verify(request, env);
 
   return null;
 }
