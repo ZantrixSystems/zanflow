@@ -233,9 +233,21 @@ export default function AdminCaseDetailPage() {
   // Status-change control
   const [nextStatus, setNextStatus]       = useState('');
   const [statusComment, setStatusComment] = useState('');
+  const [shareLinks, setShareLinks] = useState([]);
+  const [shareSections, setShareSections] = useState([]);
+  const [shareForm, setShareForm] = useState({
+    authority_name: '',
+    contact_name: '',
+    purpose: '',
+    expiry_days: 30,
+    allowed_sections: ['case_summary', 'premises', 'licence_sections'],
+  });
+  const [newShareUrl, setNewShareUrl] = useState('');
+  const [copiedShare, setCopiedShare] = useState(false);
 
   const showStatusPanel = activePanel === 'status';
   const showNote        = activePanel === 'note';
+  const showShare       = activePanel === 'share';
 
   async function loadCase() {
     const data = await api.getPremiseCase(id);
@@ -244,9 +256,15 @@ export default function AdminCaseDetailPage() {
     setEvents(data.events ?? []);
   }
 
+  async function loadShares() {
+    const data = await api.listExternalCaseShares(id);
+    setShareLinks(data.shares ?? []);
+    setShareSections(data.available_sections ?? []);
+  }
+
   useEffect(() => {
     let active = true;
-    loadCase()
+    Promise.all([loadCase(), loadShares()])
       .catch((err) => { if (active) setError(err.message || 'Could not load application.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -261,6 +279,8 @@ export default function AdminCaseDetailPage() {
     setStatusComment('');
     setNoteText('');
     setNoteVisibility('internal');
+    setNewShareUrl('');
+    setCopiedShare(false);
     setError('');
     setNotice('');
   }
@@ -348,9 +368,97 @@ export default function AdminCaseDetailPage() {
     }
   }
 
+  function toggleShareSection(sectionKey) {
+    setShareForm((current) => {
+      const selected = new Set(current.allowed_sections);
+      if (selected.has(sectionKey)) {
+        selected.delete(sectionKey);
+      } else {
+        selected.add(sectionKey);
+      }
+      return { ...current, allowed_sections: Array.from(selected) };
+    });
+  }
+
+  async function createShareLink() {
+    if (!shareForm.authority_name.trim()) {
+      setError('Authority name is required.');
+      return;
+    }
+    if (shareForm.allowed_sections.length === 0) {
+      setError('Select at least one section to share.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setNotice('');
+    setNewShareUrl('');
+    setCopiedShare(false);
+
+    try {
+      const data = await api.createExternalCaseShare(id, {
+        ...shareForm,
+        expiry_days: Number(shareForm.expiry_days),
+      });
+      setNewShareUrl(data.share?.share_url || '');
+      setNotice('External share link created. Any previous active link for this application has been revoked.');
+      await loadShares();
+    } catch (err) {
+      setError(err.message || 'Could not create share link.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function revokeShareLink(shareId) {
+    setSaving(true);
+    setError('');
+    setNotice('');
+    try {
+      await api.revokeExternalCaseShare(id, shareId);
+      setNotice('External share link revoked.');
+      await loadShares();
+    } catch (err) {
+      setError(err.message || 'Could not revoke share link.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function extendShareLink(shareId) {
+    const raw = window.prompt('Extend for how many days from now? Maximum 30 days.', '30');
+    if (!raw) return;
+    const days = Number(raw);
+    if (!Number.isInteger(days) || days < 1 || days > 30) {
+      setError('Expiry must be between 1 and 30 days.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setNotice('');
+    try {
+      await api.extendExternalCaseShare(id, shareId, { expiry_days: days });
+      setNotice('External share link expiry updated.');
+      await loadShares();
+    } catch (err) {
+      setError(err.message || 'Could not extend share link.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function copyNewShareUrl() {
+    if (!newShareUrl) return;
+    await navigator.clipboard.writeText(newShareUrl);
+    setCopiedShare(true);
+  }
+
   const isAssignedToMe = plc?.assigned_user_id === session.user_id;
   const isClosed       = ['licensed', 'refused'].includes(plc?.status);
   const isActive       = !isClosed && plc?.status !== 'draft';
+  const canManageExternalShares = ['officer', 'manager'].includes(session.role) && canDo('cases.view');
 
   const availableNextStatuses = NEXT_STATUSES[plc?.status] ?? [];
 
@@ -436,6 +544,16 @@ export default function AdminCaseDetailPage() {
                 >
                   Add comment
                 </button>
+                {canManageExternalShares && (
+                  <button
+                    type="button"
+                    className={`btn btn-secondary${showShare ? ' active' : ''}`}
+                    onClick={() => openPanel('share')}
+                    disabled={saving}
+                  >
+                    External share
+                  </button>
+                )}
                 {['manager', 'tenant_admin'].includes(session.role) && canDo('cases.decide') && (
                   <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={saving}>
                     Delete
@@ -532,6 +650,86 @@ export default function AdminCaseDetailPage() {
                     <button type="button" className="btn btn-secondary" onClick={() => setActivePanel(null)} disabled={saving}>Cancel</button>
                     <button type="button" className="btn btn-primary" onClick={submitNote} disabled={saving || !noteText.trim()}>
                       {saving ? 'Saving…' : 'Save comment'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {showShare && canManageExternalShares && (
+                <div className="case-inline-panel">
+                  <div className="case-inline-panel-stack">
+                    <div className="case-inline-panel-field">
+                      <label className="case-action-label" htmlFor="share-authority">Authority name</label>
+                      <input
+                        id="share-authority"
+                        className="form-input"
+                        value={shareForm.authority_name}
+                        onChange={(e) => setShareForm((cur) => ({ ...cur, authority_name: e.target.value }))}
+                        placeholder="Police Licensing"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="case-inline-panel-field">
+                      <label className="case-action-label" htmlFor="share-contact">Contact name</label>
+                      <input
+                        id="share-contact"
+                        className="form-input"
+                        value={shareForm.contact_name}
+                        onChange={(e) => setShareForm((cur) => ({ ...cur, contact_name: e.target.value }))}
+                        placeholder="Optional"
+                      />
+                    </div>
+                    <div className="case-inline-panel-field">
+                      <label className="case-action-label" htmlFor="share-purpose">Purpose</label>
+                      <input
+                        id="share-purpose"
+                        className="form-input"
+                        value={shareForm.purpose}
+                        onChange={(e) => setShareForm((cur) => ({ ...cur, purpose: e.target.value }))}
+                        placeholder="Consultation review"
+                      />
+                    </div>
+                    <div className="case-inline-panel-field">
+                      <label className="case-action-label" htmlFor="share-expiry">Expires after days</label>
+                      <input
+                        id="share-expiry"
+                        className="form-input"
+                        type="number"
+                        min="1"
+                        max="30"
+                        value={shareForm.expiry_days}
+                        onChange={(e) => setShareForm((cur) => ({ ...cur, expiry_days: e.target.value }))}
+                      />
+                      <p className="case-action-label-hint">Maximum 30 days. Creating a new link revokes the current active link.</p>
+                    </div>
+                    <div className="case-inline-panel-field">
+                      <label className="case-action-label">Sections to share</label>
+                      <div className="external-share-section-list">
+                        {shareSections.map((section) => (
+                          <label key={section.key} className="external-share-section-option">
+                            <input
+                              type="checkbox"
+                              checked={shareForm.allowed_sections.includes(section.key)}
+                              onChange={() => toggleShareSection(section.key)}
+                            />
+                            <span>{section.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    {newShareUrl && (
+                      <div className="external-share-created">
+                        <div className="external-share-url">{newShareUrl}</div>
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={copyNewShareUrl}>
+                          {copiedShare ? 'Copied' : 'Copy link'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="case-inline-panel-actions">
+                    <button type="button" className="btn btn-secondary" onClick={() => setActivePanel(null)} disabled={saving}>Close</button>
+                    <button type="button" className="btn btn-primary" onClick={createShareLink} disabled={saving}>
+                      {saving ? 'Creating...' : 'Create link'}
                     </button>
                   </div>
                 </div>
@@ -678,6 +876,46 @@ export default function AdminCaseDetailPage() {
                     <dd style={{ wordBreak: 'break-all' }}>{plc.applicant_email || '—'}</dd>
                   </div>
                 </dl>
+              </div>
+
+              <div className="case-info-card" style={{ marginTop: '1rem' }}>
+                <div className="case-info-card-title">External sharing</div>
+                {shareLinks.length === 0 ? (
+                  <p className="case-action-label-hint">No external links have been created.</p>
+                ) : (
+                  <div className="external-share-history">
+                    {shareLinks.map((share) => (
+                      <div key={share.id} className="external-share-history-item">
+                        <div className="external-share-history-head">
+                          <strong>{share.authority_name}</strong>
+                          <span className={`external-share-state${share.is_active ? ' active' : ''}`}>
+                            {share.is_active ? 'Active' : share.revoked_at ? 'Revoked' : 'Expired'}
+                          </span>
+                        </div>
+                        <div className="external-share-history-meta">
+                          Expires {formatDate(share.expires_at)}
+                        </div>
+                        <div className="external-share-history-meta">
+                          Viewed {share.view_count || 0} time{share.view_count === 1 ? '' : 's'}
+                          {share.last_viewed_at ? `, last ${formatDate(share.last_viewed_at)}` : ''}
+                        </div>
+                        <div className="external-share-history-sections">
+                          {(share.allowed_section_summary || []).map((section) => section.label).join(', ')}
+                        </div>
+                        {share.is_active && canManageExternalShares && (
+                          <div className="external-share-history-actions">
+                            <button type="button" className="btn btn-secondary btn-sm" onClick={() => extendShareLink(share.id)} disabled={saving}>
+                              Extend
+                            </button>
+                            <button type="button" className="btn btn-danger btn-sm" onClick={() => revokeShareLink(share.id)} disabled={saving}>
+                              Revoke
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </aside>
           </div>

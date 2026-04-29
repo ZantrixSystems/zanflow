@@ -26,6 +26,7 @@ import { handleApplicationRoutes }     from './routes/applications.js';
 import { handleAdminApplicationRoutes } from './routes/admin-applications.js';
 import { handleAdminCaseRoutes } from './routes/admin-cases.js';
 import { handleAdminPremiseCaseRoutes } from './routes/admin-premise-cases.js';
+import { handleExternalCaseShareRoutes } from './routes/external-case-shares.js';
 import { handleAdminLicenceSectionRoutes } from './routes/admin-licence-sections.js';
 import { handleApplicantCaseRoutes }   from './routes/applicant-cases.js';
 import { handleAdminApplicationSetupRoutes } from './routes/admin-application-setup.js';
@@ -302,6 +303,7 @@ export default {
         (await handlePremisesRoutes(request, env))             ??
         // New premise-licence-case routes (MVP model)
         (await handleApplicantCaseRoutes(request, env))        ??
+        (await handleExternalCaseShareRoutes(request, env))    ??
         (await handleAdminPremiseCaseRoutes(request, env))     ??
         (await handleAdminLicenceSectionRoutes(request, env))  ??
         // Legacy application routes (kept for transition)

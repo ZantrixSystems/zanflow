@@ -295,3 +295,136 @@ export async function createApplicationFixture({
     await pool.end();
   }
 }
+
+export async function createLicenceSectionFixture({
+  tenantId,
+  slug = `section-${randomUUID().slice(0, 8)}`,
+  name = 'Test Section',
+  description = 'Test section description',
+  fields = [{ key: 'answer', label: 'Answer', type: 'text', required: false }],
+  displayOrder = 1,
+} = {}) {
+  const pool = createTestPool();
+  const client = await pool.connect();
+
+  try {
+    const result = await client.query(`
+      INSERT INTO licence_section_definitions (
+        tenant_id,
+        slug,
+        name,
+        description,
+        fields,
+        display_order
+      )
+      VALUES ($1, $2, $3, $4, $5::jsonb, $6)
+      RETURNING *
+    `, [tenantId, slug, name, description, JSON.stringify(fields), displayOrder]);
+
+    return result.rows[0];
+  } finally {
+    client.release();
+    await pool.end();
+  }
+}
+
+export async function createPremiseCaseFixture({
+  tenantId,
+  applicantAccountId,
+  premisesId = null,
+  status = 'submitted',
+  assignedUserId = null,
+  submittedAt = new Date().toISOString(),
+} = {}) {
+  const pool = createTestPool();
+  const client = await pool.connect();
+
+  try {
+    let resolvedPremisesId = premisesId;
+    if (!resolvedPremisesId) {
+      const premises = await client.query(`
+        INSERT INTO premises (
+          tenant_id,
+          applicant_account_id,
+          premises_name,
+          address_line_1,
+          address_line_2,
+          town_or_city,
+          postcode,
+          premises_description,
+          verification_state
+        )
+        VALUES ($1, $2, 'Test Premises', '1 Test Street', NULL, 'Test Town', 'TE1 1ST', 'Test venue', 'verified')
+        RETURNING id
+      `, [tenantId, applicantAccountId]);
+      resolvedPremisesId = premises.rows[0].id;
+    }
+
+    const result = await client.query(`
+      INSERT INTO premise_licence_cases (
+        tenant_id,
+        applicant_account_id,
+        premises_id,
+        premises_name,
+        address_line_1,
+        address_line_2,
+        town_or_city,
+        postcode,
+        premises_description,
+        status,
+        assigned_user_id,
+        submitted_at
+      )
+      VALUES (
+        $1,
+        $2,
+        $3,
+        'Test Premises',
+        '1 Test Street',
+        NULL,
+        'Test Town',
+        'TE1 1ST',
+        'Test venue',
+        $4,
+        $5,
+        $6
+      )
+      RETURNING *
+    `, [tenantId, applicantAccountId, resolvedPremisesId, status, assignedUserId, submittedAt]);
+
+    return result.rows[0];
+  } finally {
+    client.release();
+    await pool.end();
+  }
+}
+
+export async function addSectionToPremiseCaseFixture({
+  tenantId,
+  caseId,
+  sectionDefinitionId,
+  sectionSlug,
+  answers = { answer: 'Yes' },
+} = {}) {
+  const pool = createTestPool();
+  const client = await pool.connect();
+
+  try {
+    const result = await client.query(`
+      INSERT INTO case_selected_sections (
+        tenant_id,
+        case_id,
+        section_definition_id,
+        section_slug,
+        answers
+      )
+      VALUES ($1, $2, $3, $4, $5::jsonb)
+      RETURNING *
+    `, [tenantId, caseId, sectionDefinitionId, sectionSlug, JSON.stringify(answers)]);
+
+    return result.rows[0];
+  } finally {
+    client.release();
+    await pool.end();
+  }
+}

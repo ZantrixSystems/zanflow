@@ -58,6 +58,16 @@ export async function resetTestData() {
     `);
 
     await client.query(`
+      DELETE FROM external_case_shares
+      WHERE tenant_id IN (
+        SELECT id FROM tenants WHERE slug LIKE 'test-%'
+      )
+         OR created_by_user_id IN (
+           SELECT id FROM users WHERE email LIKE '%@test-%'
+         )
+    `);
+
+    await client.query(`
       DELETE FROM audit_logs
       WHERE tenant_id IN (
         SELECT id FROM tenants WHERE slug LIKE 'test-%'
@@ -78,6 +88,34 @@ export async function resetTestData() {
 
     await client.query(`
       DELETE FROM applications
+      WHERE tenant_id IN (
+        SELECT id FROM tenants WHERE slug LIKE 'test-%'
+      )
+    `);
+
+    await client.query(`
+      DELETE FROM case_events
+      WHERE tenant_id IN (
+        SELECT id FROM tenants WHERE slug LIKE 'test-%'
+      )
+    `);
+
+    await client.query(`
+      DELETE FROM case_selected_sections
+      WHERE tenant_id IN (
+        SELECT id FROM tenants WHERE slug LIKE 'test-%'
+      )
+    `);
+
+    await client.query(`
+      DELETE FROM premise_licence_cases
+      WHERE tenant_id IN (
+        SELECT id FROM tenants WHERE slug LIKE 'test-%'
+      )
+    `);
+
+    await client.query(`
+      DELETE FROM licence_section_definitions
       WHERE tenant_id IN (
         SELECT id FROM tenants WHERE slug LIKE 'test-%'
       )

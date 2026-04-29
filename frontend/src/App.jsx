@@ -39,6 +39,7 @@ import TenantBootstrapExchangePage from './pages/TenantBootstrapExchangePage.jsx
 import TenantPublicHomePage from './pages/TenantPublicHomePage.jsx';
 import ApplicantCaseDetailPage from './pages/ApplicantCaseDetailPage.jsx';
 import TenantUnavailablePage from './pages/TenantUnavailablePage.jsx';
+import ExternalCaseSharePage from './pages/ExternalCaseSharePage.jsx';
 import RequireAuth from './components/RequireAuth.jsx';
 import RequireStaffAuth from './components/RequireStaffAuth.jsx';
 import RequirePlatformAuth from './components/RequirePlatformAuth.jsx';
@@ -216,6 +217,7 @@ export default function App() {
       <Route path="/admin/bootstrap" element={<TenantBootstrapExchangePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/external/case-share/:token" element={<ExternalCaseSharePage />} />
       <Route
         path="/profile"
         element={(

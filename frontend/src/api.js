@@ -173,6 +173,11 @@ export const api = {
   addPremiseCaseNote: (id, body) => request('POST', `/api/admin/premise-cases/${id}/note`, body),
   deletePremiseCase: (id) => request('DELETE', `/api/admin/premise-cases/${id}`),
   movePremiseCaseStatus: (id, body) => request('POST', `/api/admin/premise-cases/${id}/move-status`, body),
+  listExternalCaseShares: (id) => request('GET', `/api/admin/premise-cases/${id}/external-shares`),
+  createExternalCaseShare: (id, body) => request('POST', `/api/admin/premise-cases/${id}/external-shares`, body),
+  revokeExternalCaseShare: (id, shareId) => request('POST', `/api/admin/premise-cases/${id}/external-shares/${shareId}/revoke`, {}),
+  extendExternalCaseShare: (id, shareId, body) => request('POST', `/api/admin/premise-cases/${id}/external-shares/${shareId}/extend`, body),
+  getExternalCaseShare: (token) => request('GET', `/api/external/case-shares/${encodeURIComponent(token)}`),
 
   // Licence section definitions
   listLicenceSections: () => request('GET', '/api/admin/licence-sections'),

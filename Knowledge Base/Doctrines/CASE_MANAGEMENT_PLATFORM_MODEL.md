@@ -156,4 +156,33 @@ The structured filtering system is a **core design direction** for the officer c
 
 ---
 
-*Last updated: 2026-04-19*
+## External Authority Sharing
+
+Officers and managers may create a temporary read-only external share link for a premise licence case.
+
+Rules:
+
+- Links are bearer access tokens and must be treated as confidential
+- Only a token hash is stored server-side
+- Raw links are shown only when created
+- Links expire automatically, with a maximum lifetime of 30 days
+- Officers may revoke or extend an active link, but extension remains capped at 30 days from the extension action
+- Creating a new link for the same case revokes any previous active link for that case
+- Each link records the intended authority, purpose, creator, expiry, selected sections, view count, and last viewed timestamp
+- External viewers do not need an account
+- External views are read-only and show only the selected sections
+- Internal notes, audit logs, assignment details, staff-only events, and hidden review data are never exposed
+- Every create, revoke, extend, and view is audited
+
+Initial supported share sections:
+
+- case summary
+- premises details
+- applicant details
+- selected licence sections and answers
+
+Documents are intentionally excluded from the first slice.
+
+---
+
+*Last updated: 2026-04-29*
